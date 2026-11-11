@@ -55,7 +55,7 @@ from polestar_api.models.precleaning import PreCleaningErrorType, PreCleaningSta
 
 from .const import DOMAIN
 from .coordinator import PolestarVehicleData
-from .entity import PolestarEntity
+from .entity import PolestarEntity, async_filter_supported_entities
 from .utils import (
     climate_end_time,
     climate_minutes_remaining,
@@ -116,6 +116,7 @@ class PolestarSensorDescription(SensorEntityDescription):
 
     value_fn: Callable[[PolestarVehicleData], StateType | None]
     attrs_fn: Callable[[PolestarVehicleData], dict[str, Any]] | None = None
+    fetch_attr: str | None = None
 
 
 SENSORS: tuple[PolestarSensorDescription, ...] = (
@@ -400,6 +401,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="air_quality_index",
+        fetch_attr="precleaning",
         name="Air quality index",
         device_class=SensorDeviceClass.AQI,
         state_class=SensorStateClass.MEASUREMENT,
@@ -407,6 +409,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="pm25",
+        fetch_attr="precleaning",
         name="PM2.5",
         device_class=SensorDeviceClass.PM25,
         state_class=SensorStateClass.MEASUREMENT,
@@ -415,6 +418,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="precleaning_runtime_left",
+        fetch_attr="precleaning",
         name="Pre-cleaning runtime left",
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
@@ -423,6 +427,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="precleaning_start_reason",
+        fetch_attr="precleaning",
         name="Pre-cleaning start reason",
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -431,6 +436,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="precleaning_error",
+        fetch_attr="precleaning",
         name="Pre-cleaning error",
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -587,11 +593,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up Polestar sensors."""
     data = hass.data[DOMAIN][entry.entry_id]
-    entities = []
     for coordinator in data["coordinators"].values():
-        for desc in SENSORS:
-            entities.append(PolestarSensor(coordinator, desc))
-    async_add_entities(entities)
+        entities = [PolestarSensor(coordinator, desc) for desc in SENSORS]
+        async_add_entities(async_filter_supported_entities(hass, coordinator, "sensor", entities))
 
 
 class PolestarSensor(PolestarEntity, SensorEntity):
@@ -602,6 +606,7 @@ class PolestarSensor(PolestarEntity, SensorEntity):
     def __init__(self, coordinator, description: PolestarSensorDescription) -> None:
         super().__init__(coordinator)
         self.entity_description = description
+        self.required_fetch = description.fetch_attr
         self._attr_unique_id = f"{self._vehicle.vin}_{description.key}"
 
     @property

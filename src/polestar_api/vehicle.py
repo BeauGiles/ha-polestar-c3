@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator, Callable
 from typing import TYPE_CHECKING
 
@@ -35,6 +36,7 @@ from .models.window import WindowControlType
 from .services.amp_limit import AmpLimitServiceClient
 from .services.availability import AvailabilityServiceClient
 from .services.battery import BatteryServiceClient
+from .services.car_information import CarInformationServiceClient
 from .services.charge_location import ChargeLocationServiceClient
 from .services.charge_now import ChargeNowServiceClient
 from .services.charge_timer import ChargeTimerServiceClient
@@ -54,6 +56,9 @@ from .services.weather import WeatherServiceClient
 
 if TYPE_CHECKING:
     from .connection import GrpcConnection
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Vehicle:
@@ -78,6 +83,7 @@ class Vehicle:
         self._amp_limit = AmpLimitServiceClient(connection, vin)
         self._availability = AvailabilityServiceClient(connection, vin)
         self._battery = BatteryServiceClient(connection, vin)
+        self._car_information = CarInformationServiceClient(connection, vin)
         self._charge_location = ChargeLocationServiceClient(connection, vin)
         self._charge_now = ChargeNowServiceClient(connection, vin)
         self._charge_timer = ChargeTimerServiceClient(connection, vin)
@@ -94,6 +100,29 @@ class Vehicle:
         self._precleaning = PreCleaningServiceClient(connection, vin)
         self._target_soc = TargetSocServiceClient(connection, vin)
         self._weather = WeatherServiceClient(connection, vin)
+
+    # -- Car information --
+
+    async def async_load_car_information(self) -> None:
+        """Fill in the model name, model year and registration when discovery did not provide them.
+
+        The vehicle list can return only the VIN. The car information service still knows the
+        model name (for example ``Polestar 4``). Values already set are kept, and a failure
+        leaves the vehicle unchanged.
+        """
+        try:
+            my_car = await self._car_information.get_my_car()
+        except Exception:  # noqa: BLE001
+            _LOGGER.debug("Could not load car information for the vehicle")
+            return
+        if my_car is None:
+            return
+        car = my_car.car
+        if car is not None:
+            self.model_name = self.model_name or car.vehicle_type_name or None
+            if self.model_year is None and car.model_year.isdigit():
+                self.model_year = int(car.model_year)
+        self.registration_no = self.registration_no or my_car.registration_plate or None
 
     # -- Battery --
 
