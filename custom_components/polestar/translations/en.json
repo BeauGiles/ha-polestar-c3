@@ -12,7 +12,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to Polestar (Unofficial)",
+        "title": "Connect to Polestar C3 (Unofficial)",
         "data": {
           "email": "Email",
           "password": "Password",

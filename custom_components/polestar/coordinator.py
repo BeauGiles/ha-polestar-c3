@@ -30,6 +30,7 @@ from polestar_api.models.charging import (
 from polestar_api.models.climate import ClimatizationInfo
 from polestar_api.models.climatization import HeatingIntensity
 from polestar_api.models.common import Location, ResponseStatusCode
+from polestar_api.models.consent import RemoteFunctionDataSharing
 from polestar_api.models.connectivity import ConnectivityInfo
 from polestar_api.models.dashboard import DashboardStatus
 from polestar_api.models.exterior import ExteriorStatus
@@ -105,6 +106,7 @@ class PolestarVehicleData:
     current_charge_location: dict[str, Any] = field(default_factory=dict)
     climate_timers: list[ParkingClimateTimer] = field(default_factory=list)
     climate_timer_settings: ParkingClimateTimerSettings | None = None
+    remote_function_data_sharing: RemoteFunctionDataSharing | None = None
 
 
 _FETCH_ATTRS: tuple[tuple[str, str], ...] = (
@@ -128,6 +130,7 @@ _FETCH_ATTRS: tuple[tuple[str, str], ...] = (
     ("current_charge_location", "is_at_charge_location"),
     ("climate_timers", "get_climate_timers"),
     ("climate_timer_settings", "get_climate_timer_settings"),
+    ("remote_function_data_sharing", "get_remote_function_data_sharing"),
 )
 _FETCH_ATTR_LOOKUP = dict(_FETCH_ATTRS)
 

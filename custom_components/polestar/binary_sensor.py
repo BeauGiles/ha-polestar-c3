@@ -194,6 +194,14 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         device_class=BinarySensorDeviceClass.RUNNING,
         value_fn=lambda d: d.precleaning.is_running if d.precleaning else None,
     ),
+    PolestarBinarySensorDescription(
+        # Read-only: the official app's "SetPrivacySettingState" write path
+        # was not directly observed, so this integration does not expose a
+        # way to change this from Home Assistant — see the library docs.
+        key="remote_function_data_sharing",
+        name="Remote function data sharing",
+        value_fn=lambda d: d.remote_function_data_sharing.enabled if d.remote_function_data_sharing else None,
+    ),
 )
 
 

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from .models.availability import Availability
 from .models.battery import Battery
 from .models.charge_location import ChargeLocation
+from .models.consent import PrivacySetting, PrivacySettingDetail, RemoteFunctionDataSharing
 from .models.ota import CarSoftwareInfo, Scheduler
 from .models.parking_climate_timer import ParkingClimateTimer, ParkingClimateTimerSettings
 from .models.precleaning import PreCleaningInfo
@@ -38,6 +39,7 @@ from .services.charge_location import ChargeLocationServiceClient
 from .services.charge_now import ChargeNowServiceClient
 from .services.charge_timer import ChargeTimerServiceClient
 from .services.climate import ClimateServiceClient
+from .services.consent import ConsentServiceClient
 from .services.dashboard import DashboardServiceClient
 from .services.exterior import ExteriorServiceClient
 from .services.health import HealthServiceClient
@@ -80,6 +82,7 @@ class Vehicle:
         self._charge_now = ChargeNowServiceClient(connection, vin)
         self._charge_timer = ChargeTimerServiceClient(connection, vin)
         self._climate = ClimateServiceClient(connection, vin)
+        self._consent = ConsentServiceClient(connection, vin)
         self._dashboard = DashboardServiceClient(connection, vin)
         self._exterior = ExteriorServiceClient(connection, vin)
         self._health = HealthServiceClient(connection, vin)
@@ -197,7 +200,7 @@ class Vehicle:
     async def get_dashboard(self) -> DashboardStatus | None:
         """Trip meters, odometer, and tyre pressure warnings, or ``None`` if unavailable.
 
-        Note: This is a legacy PCCS endpoint (``DashboardService``).
+        Note: This is a legacy C3 ``DashboardService`` endpoint.
         It is **UNIMPLEMENTED** on Digital Twin vehicles (Polestar 4+).
         Use :meth:`get_odometer` and :meth:`get_health` instead.
         """
@@ -412,6 +415,74 @@ class Vehicle:
     async def stop_precleaning(self) -> None:
         """Stop cabin air quality pre-cleaning."""
         await self._invocation.precleaning_stop()
+
+    # -- Air Purification --
+    #
+    # The official app shows "Air Purification" and "Pre-cleaning" as
+    # separate-looking controls in different parts of the UI, but on C3
+    # they are the exact same backend feature: both drive
+    # ``invocation.InvocationService/PreCleaning`` (request field ``start``)
+    # and read from ``services.vehiclestates.precleaning.PreCleaningService``.
+    # These are plain aliases — no separate wire protocol exists.
+
+    async def get_air_purification(self) -> PreCleaningInfo | None:
+        """Air purification status. Alias of :meth:`get_precleaning`."""
+        return await self.get_precleaning()
+
+    async def stream_air_purification(self) -> AsyncIterator[PreCleaningInfo]:
+        """Real-time air purification updates. Alias of :meth:`stream_precleaning`."""
+        async for status in self.stream_precleaning():
+            yield status
+
+    async def start_air_purification(self) -> None:
+        """Start air purification. Alias of :meth:`start_precleaning`."""
+        await self.start_precleaning()
+
+    async def stop_air_purification(self) -> None:
+        """Stop air purification. Alias of :meth:`stop_precleaning`."""
+        await self.stop_precleaning()
+
+    # -- Data sharing / privacy consent --
+
+    async def get_remote_function_data_sharing(self) -> RemoteFunctionDataSharing | None:
+        """Overall "share remote function data" consent toggle for this car.
+
+        Reads ``userServices.PrivacySettings/GetRemoteFunctionDataSharing``.
+        """
+        return await self._consent.get_remote_function_data_sharing()
+
+    async def get_privacy_settings(self) -> AsyncIterator[PrivacySetting]:
+        """Stream the per-category privacy/data-sharing settings for this car.
+
+        Reads ``userServices.PrivacySettings/GetPrivacySettingsV2Stream``.
+        This is a genuine subscription-style RPC (it may stay open for live
+        updates), so this yields settings as they arrive rather than
+        returning a finished list — collect what you need and stop
+        iterating, or iterate indefinitely for live updates.
+        """
+        async for setting in self._consent.stream_privacy_settings():
+            yield setting
+
+    async def get_privacy_setting(self, service_id: str, locale: str = "en") -> PrivacySettingDetail | None:
+        """A single named privacy setting's current state, with display text.
+
+        Reads ``userServices.PrivacySettings/GetPrivacySettingStateEx``.
+        """
+        return await self._consent.get_privacy_setting(service_id, locale)
+
+    async def set_privacy_setting(self, service_id: str, enabled: bool) -> None:
+        """Set a single named privacy setting's enabled state.
+
+        .. warning::
+           **Best-effort / unverified.** The request message fields were
+           recovered from the official app's protobuf schema
+           (``SetPrivacySettingStateRequest``), but no call site invoking
+           this RPC was found in the decompiled app to confirm the exact
+           gRPC method path or response handling. Test carefully (e.g.
+           against a setting you can also check/revert in the app) before
+           relying on this in automations.
+        """
+        await self._consent.set_privacy_setting(service_id, enabled)
 
     def __repr__(self) -> str:
         parts = [f"Vehicle(vin={self.vin!r}"]
