@@ -123,3 +123,23 @@ def state_icon(is_on: bool | None, icon_on: str | None, icon_off: str | None, de
     if icon_on is None and icon_off is None:
         return default
     return icon_on if is_on else icon_off
+
+
+def climate_end_time(climate) -> float | None:
+    """When the running climate ends (seconds since the epoch), or ``None`` if it is not running."""
+    if climate is None or not climate.is_active or not climate.ending_at:
+        return None
+    return float(climate.ending_at)
+
+
+def climate_minutes_remaining(climate, now: float) -> int | None:
+    """Minutes left of a running climate, counted from its end time when the car reports one.
+
+    The car's own "runtime left" stays at the full duration while the climate runs.
+    """
+    if climate is None:
+        return None
+    end = climate_end_time(climate)
+    if end is not None:
+        return max(0, -int((now - end) // 60))
+    return climate.time_remaining

@@ -156,6 +156,22 @@ class TestClimatizationInfo:
         assert restored.time_remaining == 15
         assert restored.is_active is True
 
+    def test_temperature_and_seat_fields_are_plain_attributes(self):
+        """These are set by ClimateServiceClient._parse_digital_twin, not wire-decoded here."""
+        from polestar_api.models.climatization import HeatingIntensity
+
+        info = ClimatizationInfo(
+            current_temperature_celsius=21.5,
+            target_temperature_celsius=22.0,
+            front_left_seat=HeatingIntensity.LEVEL1,
+            rear_right_seat=HeatingIntensity.LEVEL3,
+            started_at=1_700_000_000,
+            ending_at=1_700_000_600,
+        )
+        assert info.current_temperature_celsius == 21.5
+        assert info.rear_right_seat == HeatingIntensity.LEVEL3
+        assert info.ending_at == 1_700_000_600
+
 
 # -- Connectivity --
 

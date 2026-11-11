@@ -18,12 +18,12 @@ Then add the integration via **Settings → Devices & Services → Add Integrati
 
 ## Entities
 
-Each vehicle gets ~106 entities when all features are available:
+Each vehicle gets ~114 entities when all features are available:
 Features vary between models, and are yet to be fully documented
 
 | Platform | Count | Examples |
 |----------|-------|---------|
-| Sensor | 48 | Battery level, charging status, availability reason, climate status, health warnings, tyre pressures, charge locations |
+| Sensor | 56 | Battery level, charging status, availability reason, climate status/temperature/seat heating, health warnings, tyre pressures, charge locations |
 | Binary sensor | 26 | Charging, plugged in, locked, doors, windows, hood, tailgate, tank lid, available, remote function data sharing |
 | Device tracker | 2 | GPS location, parked location |
 | Lock | 1 | Central lock |
