@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable, Iterable
-from dataclasses import dataclass, field, replace
+from dataclasses import MISSING, dataclass, field, fields, replace
 from datetime import time as dt_time, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -60,6 +60,12 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 _POST_COMMAND_REFRESH_DELAYS: tuple[int, ...] = (3, 5)
+# Endpoints that answered UNIMPLEMENTED are skipped on scheduled polls, but
+# re-probed this often in case the backend starts serving them again.
+_UNSUPPORTED_REPROBE_CYCLES = 6
+# A stream that stops pushing without erroring is indistinguishable from a healthy
+# idle one, so resubscribe after this many poll intervals of silence.
+_STREAM_STALE_POLL_INTERVALS = 3
 _COMMAND_INVOCATION_SUCCESS = {
     InvocationStatus.SENT,
     InvocationStatus.DELIVERED,
@@ -144,6 +150,7 @@ _FETCH_ATTRS: tuple[tuple[str, str], ...] = (
     ("exterior", "get_exterior"),
     ("location", "get_location"),
     ("parked_location", "get_parked_location"),
+    ("odometer", "get_odometer"),
     ("climate", "get_climate"),
     ("dashboard", "get_dashboard"),
     ("health", "get_health"),
@@ -163,6 +170,15 @@ _FETCH_ATTRS: tuple[tuple[str, str], ...] = (
     ("remote_function_data_sharing", "get_remote_function_data_sharing"),
 )
 _FETCH_ATTR_LOOKUP = dict(_FETCH_ATTRS)
+_ATTR_FIELDS = {spec.name: spec for spec in fields(PolestarVehicleData)}
+
+
+def _attr_default(attr: str) -> Any:
+    """Return the empty PolestarVehicleData value for an attribute."""
+    spec = _ATTR_FIELDS[attr]
+    if spec.default_factory is not MISSING:
+        return spec.default_factory()
+    return spec.default
 
 
 class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
@@ -206,6 +222,8 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         self._no_data_fetches: set[str] = set()
         self._climate_started_at: float | None = None
         self._last_started_values: dict[str, Any] = {}
+        self._stream_last_data: dict[str, float] = {}
+        self._poll_count: int = 0
         self._command_failure_listeners: list[Callable[[], None]] = []
         add_listener = getattr(vehicle, "add_invocation_listener", None)
         self._remove_invocation_listener = add_listener(self._handle_invocation_result) if add_listener else None
@@ -356,30 +374,45 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         self,
         attrs: Iterable[str],
         previous: PolestarVehicleData,
+        *,
+        probe_unsupported: bool = True,
     ) -> tuple[dict[str, Any], int]:
         """Fetch a subset of vehicle attributes concurrently."""
         requested = tuple(dict.fromkeys(attrs))
-        attr_names = tuple(attr for attr in requested if attr not in self._unsupported_fetches)
+        values: dict[str, Any] = {}
+        if probe_unsupported:
+            attr_names = requested
+        else:
+            attr_names = tuple(a for a in requested if a not in self._unsupported_fetches)
+            for attr in self._unsupported_fetches.intersection(requested):
+                values[attr] = _attr_default(attr)
+
         coroutines = [
             asyncio.wait_for(getattr(self.vehicle, _FETCH_ATTR_LOOKUP[attr])(), timeout=15)
             for attr in attr_names
         ]
         results = await asyncio.gather(*coroutines, return_exceptions=True)
 
-        values: dict[str, Any] = {
-            attr: getattr(previous, attr) for attr in requested if attr in self._unsupported_fetches
-        }
         successful_fetches = 0
         for attr, result in zip(attr_names, results, strict=True):
             if isinstance(result, (AuthError, TokenExpiredError)):
                 raise ConfigEntryAuthFailed(str(result)) from result
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 if is_unsupported_feature_error(result):
                     _LOGGER.info("%s is not supported by vehicle %s; it will not be polled", attr, self.vehicle.vin)
                     self._unsupported_fetches.add(attr)
+                    # Clear rather than carry the last good value forward: an
+                    # endpoint the backend has withdrawn would otherwise pin
+                    # its sensors to a stale snapshot forever.
+                    values[attr] = _attr_default(attr)
+                    continue
                 _LOGGER.debug("Failed to fetch %s for %s: %s", attr, self.vehicle.vin, result)
                 values[attr] = getattr(previous, attr)
                 continue
+
+            if attr in self._unsupported_fetches:
+                self._unsupported_fetches.discard(attr)
+                _LOGGER.info("Fetch %s is supported again for %s", attr, self.vehicle.vin)
 
             if result is None:
                 self._empty_fetches.add(attr)
@@ -393,7 +426,12 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
 
     async def _async_update_data(self) -> PolestarVehicleData:
         previous = self.data or PolestarVehicleData()
-        values, successful_fetches = await self._async_fetch_values(_FETCH_ATTR_LOOKUP, previous)
+        self._poll_count += 1
+        values, successful_fetches = await self._async_fetch_values(
+            _FETCH_ATTR_LOOKUP,
+            previous,
+            probe_unsupported=self._poll_count % _UNSUPPORTED_REPROBE_CYCLES == 1,
+        )
 
         if successful_fetches == 0:
             if self.data is not None:
@@ -405,7 +443,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         data = PolestarVehicleData(**values)
         self._update_installed_version_cache(data.software)
         self._unsupported_commands.clear()
-        self._restart_dead_streams()
+        await self._restart_dead_streams()
         return data
 
     def _async_push_data(self, data: PolestarVehicleData) -> None:
@@ -457,14 +495,31 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
                     name=f"polestar-{self.vehicle.vin}-{attr}-stream",
                 )
 
-    def _restart_dead_streams(self) -> None:
-        """Restart streams that gave up, after a successful poll proves connectivity."""
+    async def _restart_dead_streams(self) -> None:
+        """Restart streams that gave up or went silent, after a poll proves connectivity."""
+        stale_after = (
+            self.update_interval.total_seconds() * _STREAM_STALE_POLL_INTERVALS
+            if self.update_interval is not None
+            else None
+        )
+        now = time.monotonic()
         for attr, method_name in self._STREAMS.items():
             if attr in self._unsupported_streams:
                 continue
             task = self._stream_tasks.get(attr)
             if task is not None and not task.done():
-                continue
+                last_data = self._stream_last_data.get(attr)
+                # A task that has never yielded may just be a slow first message;
+                # only resubscribe when a previously working stream went quiet.
+                if stale_after is None or last_data is None or now - last_data < stale_after:
+                    continue
+                _LOGGER.warning(
+                    "Live %s stream for %s delivered nothing for %.0fs, resubscribing",
+                    attr, self.vehicle.vin, now - last_data,
+                )
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+                self._stream_last_data.pop(attr, None)
             method = getattr(self.vehicle, method_name, None)
             if method is None:
                 continue
@@ -486,7 +541,9 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         if self._stream_tasks:
             await asyncio.gather(*self._stream_tasks.values(), return_exceptions=True)
         self._stream_tasks.clear()
+        self._stream_last_data.clear()
         self._unsupported_streams.clear()
+        await super().async_shutdown()
 
     async def _async_run_stream(
         self,
@@ -497,11 +554,27 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         consecutive_failures = 0
         while True:
             try:
+                received = False
                 async for value in stream_factory():
+                    received = True
                     consecutive_failures = 0
+                    self._stream_last_data[attr] = time.monotonic()
                     current = self.data or PolestarVehicleData()
                     merged_value = self._merge_partial_update(attr, getattr(current, attr), value)
                     self._async_push_data(replace(current, **{attr: merged_value}))
+                if received:
+                    # Server closed a subscription after delivering data (normal
+                    # GOAWAY behaviour) — resubscribe straight away.
+                    continue
+                # Ended without an error and without a single message: back off,
+                # otherwise this becomes an unbounded reconnect loop.
+                consecutive_failures += 1
+                delay = self._stream_retry_delay(
+                    attr, consecutive_failures, RuntimeError("stream closed without data")
+                )
+                if delay is None:
+                    return
+                await asyncio.sleep(delay)
             except asyncio.CancelledError:
                 raise
             except (AuthError, TokenExpiredError) as err:
@@ -546,6 +619,13 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
             return None
         if attr == "exterior" and previous is not None:
             return result.merge(previous)
+        if attr == "odometer" and previous is not None:
+            # odometer_meters is TOTAL_INCREASING; an out-of-order snapshot from the poll
+            # racing the stream would otherwise read as a counter reset in HA statistics.
+            # Compare the reading itself rather than a timestamp: a single skewed
+            # backend clock would pin the odometer forever, a lower reading cannot.
+            if result.odometer_meters < previous.odometer_meters:
+                return previous
         return result
 
     async def async_refresh_after_command(self, *attrs: str) -> None:

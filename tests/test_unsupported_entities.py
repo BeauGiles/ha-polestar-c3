@@ -185,6 +185,8 @@ def _coordinator(module, vehicle):
     coordinator._unsupported_fetches = set()
     coordinator._empty_fetches = set()
     coordinator._no_data_fetches = set()
+    coordinator._stream_last_data = {}
+    coordinator._poll_count = 0
     coordinator._merge_partial_update = lambda attr, previous, result: result
     return coordinator
 
@@ -211,7 +213,7 @@ async def test_unsupported_fetch_is_recorded_and_not_polled_again(monkeypatch):
     assert coordinator.is_fetch_supported("battery")
 
     vehicle.calls.clear()
-    values, successful = await coordinator._async_fetch_values(attrs, previous)
+    values, successful = await coordinator._async_fetch_values(attrs, previous, probe_unsupported=False)
 
     assert vehicle.calls == ["battery"]
     assert values["amp_limit"] is None
@@ -515,3 +517,63 @@ def test_climate_timer_slots_beyond_what_the_car_supports_are_disabled(monkeypat
     assert not none.is_fetch_supported("climate_timer_slot_1")
     assert all(all_three.is_fetch_supported(f"climate_timer_slot_{n}") for n in (1, 2, 3))
     assert all(unknown.is_fetch_supported(f"climate_timer_slot_{n}") for n in (1, 2, 3))
+
+
+@pytest.mark.asyncio
+async def test_cancelled_error_during_fetch_is_not_stored_as_data(monkeypatch):
+    """CancelledError is a BaseException, not an Exception -- a fetch that is
+    cancelled mid-flight (e.g. HA shutting down) must fall back to the
+    previous value like any other failed fetch, never be treated as data."""
+    coordinator_module, _ = _load(monkeypatch, FakeRegistry())
+
+    class CancelledVehicle(FakeVehicle):
+        async def get_battery(self):
+            raise asyncio.CancelledError
+
+    coordinator = _coordinator(coordinator_module, CancelledVehicle({}))
+    previous = coordinator_module.PolestarVehicleData(battery="old-battery")
+
+    values, successful = await coordinator._async_fetch_values(("battery",), previous)
+
+    assert successful == 0
+    assert values["battery"] == "old-battery"
+
+
+@pytest.mark.asyncio
+async def test_unsupported_fetch_probing_is_controlled_by_the_flag(monkeypatch):
+    coordinator_module, _ = _load(monkeypatch, FakeRegistry())
+    vehicle = FakeVehicle({"amp_limit": _unsupported("AMP_LIMIT")})
+    coordinator = _coordinator(coordinator_module, vehicle)
+    previous = coordinator_module.PolestarVehicleData()
+
+    # First mark it unsupported.
+    await coordinator._async_fetch_values(("amp_limit",), previous)
+    assert not coordinator.is_fetch_supported("amp_limit")
+
+    # probe_unsupported=False (as the scheduled poll uses between reprobe cycles)
+    # must not call the vehicle at all for an already-unsupported attribute.
+    vehicle.calls.clear()
+    values, _ = await coordinator._async_fetch_values(("amp_limit",), previous, probe_unsupported=False)
+    assert vehicle.calls == []
+    assert values["amp_limit"] is None
+
+    # probe_unsupported=True (the reprobe cycle) calls it again, and a
+    # successful response clears the unsupported mark.
+    vehicle.errors.pop("amp_limit")
+    vehicle.calls.clear()
+    values, successful = await coordinator._async_fetch_values(("amp_limit",), previous, probe_unsupported=True)
+    assert vehicle.calls == ["amp_limit"]
+    assert successful == 1
+    assert coordinator.is_fetch_supported("amp_limit")
+
+
+def test_odometer_merge_rejects_a_lower_reading(monkeypatch):
+    coordinator_module, _ = _load(monkeypatch, FakeRegistry())
+    from polestar_api.models.odometer import OdometerStatus
+
+    previous = OdometerStatus(odometer_meters=1000)
+    lower = OdometerStatus(odometer_meters=500)
+    higher = OdometerStatus(odometer_meters=1500)
+
+    assert coordinator_module.PolestarCoordinator._merge_partial_update("odometer", previous, lower) is previous
+    assert coordinator_module.PolestarCoordinator._merge_partial_update("odometer", previous, higher) is higher
