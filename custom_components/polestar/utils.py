@@ -116,3 +116,10 @@ def serialize_charge_location(location: ChargeLocation) -> dict[str, Any]:
             for departure in location.departure_times
         ],
     }
+
+
+def state_icon(is_on: bool | None, icon_on: str | None, icon_off: str | None, default: str | None) -> str | None:
+    """Icon that follows a binary state; an unknown state shows the "off" icon."""
+    if icon_on is None and icon_off is None:
+        return default
+    return icon_on if is_on else icon_off
