@@ -47,7 +47,13 @@ from polestar_api.models.parking_climate_timer import (
 from polestar_api.models.precleaning import PreCleaningInfo
 from polestar_api.models.weather import WeatherReport
 
-from .const import CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL, STREAM_MAX_RETRIES, STREAM_RETRY_DELAY
+from .const import (
+    CONF_UPDATE_INTERVAL,
+    DEFAULT_UPDATE_INTERVAL,
+    STREAM_MAX_RETRIES,
+    STREAM_MIN_RESUBSCRIBE_INTERVAL,
+    STREAM_RETRY_DELAY,
+)
 from .utils import local_utc_offset_minutes
 
 if TYPE_CHECKING:
@@ -632,6 +638,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         """Run a single long-lived stream and merge updates into coordinator state."""
         consecutive_failures = 0
         while True:
+            subscribed_at = time.monotonic()
             try:
                 received = False
                 async for value in stream_factory():
@@ -643,7 +650,12 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
                     self._async_apply_values({attr: merged_value}, self.next_fetch_generation())
                 if received:
                     # Server closed a subscription after delivering data (normal
-                    # GOAWAY behaviour) — resubscribe straight away.
+                    # GOAWAY behaviour) — resubscribe, but never sooner than the
+                    # floor after the last subscribe, so a server that closes
+                    # after every message cannot turn this into a request loop.
+                    wait = STREAM_MIN_RESUBSCRIBE_INTERVAL - (time.monotonic() - subscribed_at)
+                    if wait > 0:
+                        await asyncio.sleep(wait)
                     continue
                 # Ended without an error and without a single message: back off,
                 # otherwise this becomes an unbounded reconnect loop.

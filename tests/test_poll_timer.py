@@ -57,6 +57,39 @@ async def test_stream_updates_do_not_reset_poll_timer(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_resubscribe_after_clean_close_respects_the_floor(monkeypatch):
+    """A server closing the stream after every message must not become a tight loop."""
+    module, _ = _load(monkeypatch, FakeRegistry())
+    coordinator = _push_coordinator(module)
+
+    clock = [1_000.0]
+    monkeypatch.setattr(module.time, "monotonic", lambda: clock[0])
+
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr(module.asyncio, "sleep", fake_sleep)
+
+    calls = 0
+
+    async def stream():
+        nonlocal calls
+        calls += 1
+        if calls > 2:
+            raise asyncio.CancelledError
+        yield f"battery-{calls}"
+
+    with pytest.raises(asyncio.CancelledError):
+        async with asyncio.timeout(5):
+            await coordinator._async_run_stream("battery", stream)
+
+    assert calls == 3
+    assert sleeps == [module.STREAM_MIN_RESUBSCRIBE_INTERVAL] * 2
+
+
+@pytest.mark.asyncio
 async def test_partial_refresh_after_command_does_not_reset_poll_timer(monkeypatch):
     module, _ = _load(monkeypatch, FakeRegistry())
     coordinator = _push_coordinator(module)
