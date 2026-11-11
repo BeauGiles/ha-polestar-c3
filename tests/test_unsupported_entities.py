@@ -189,6 +189,7 @@ def _coordinator(module, vehicle):
     coordinator._poll_count = 0
     coordinator._generation = 0
     coordinator._applied_generations = {}
+    coordinator._last_unsupported_probe = None
     coordinator._merge_partial_update = lambda attr, previous, result: result
     return coordinator
 

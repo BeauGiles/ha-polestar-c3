@@ -72,6 +72,23 @@ def test_slow_poll_cannot_revert_a_newer_refresh(monkeypatch):
     assert coordinator.data.climate == "on", "a slow poll reverted a newer result"
 
 
+def test_unsupported_probe_is_claimed_on_first_poll_then_once_a_day(monkeypatch):
+    """UNIMPLEMENTED endpoints are re-probed by elapsed time, not poll count."""
+    module, _ = _load(monkeypatch, FakeRegistry())
+    coordinator = _coordinator(module, FakeVehicle({}))
+
+    clock = [1_000_000.0]
+    monkeypatch.setattr(module.time, "monotonic", lambda: clock[0])
+
+    assert coordinator._claim_unsupported_probe() is True
+    for _ in range(20):
+        clock[0] += 300
+        assert coordinator._claim_unsupported_probe() is False
+
+    clock[0] += module._UNSUPPORTED_REPROBE_INTERVAL
+    assert coordinator._claim_unsupported_probe() is True
+
+
 def test_lock_error_is_a_failure_even_when_the_invocation_says_sent(monkeypatch):
     """CarLockResponse.lock_error is where 'a door is ajar' actually shows up."""
     module, _ = _load(monkeypatch, FakeRegistry())

@@ -66,8 +66,9 @@ _LOGGER = logging.getLogger(__name__)
 # the command having been silently undone.
 _POST_COMMAND_REFRESH_DELAYS: tuple[int, ...] = (3, 5, 10, 15, 30, 60)
 # Endpoints that answered UNIMPLEMENTED are skipped on scheduled polls, but
-# re-probed this often in case the backend starts serving them again.
-_UNSUPPORTED_REPROBE_CYCLES = 6
+# re-probed this often (seconds) in case the backend starts serving them again.
+# Elapsed time rather than a poll count, so it holds if the poll interval changes.
+_UNSUPPORTED_REPROBE_INTERVAL = 24 * 60 * 60
 # A stream that stops pushing without erroring is indistinguishable from a healthy
 # idle one, so resubscribe after this many poll intervals of silence.
 _STREAM_STALE_POLL_INTERVALS = 3
@@ -234,6 +235,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         # after a faster one and resurrect pre-command state.
         self._generation: int = 0
         self._applied_generations: dict[str, int] = {}
+        self._last_unsupported_probe: float | None = None
         self._command_failure_listeners: list[Callable[[], None]] = []
         add_listener = getattr(vehicle, "add_invocation_listener", None)
         self._remove_invocation_listener = add_listener(self._handle_invocation_result) if add_listener else None
@@ -457,6 +459,15 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         self._generation += 1
         return self._generation
 
+    def _claim_unsupported_probe(self) -> bool:
+        """Whether this poll should re-probe endpoints that were UNIMPLEMENTED."""
+        now = time.monotonic()
+        last = self._last_unsupported_probe
+        if last is not None and now - last < _UNSUPPORTED_REPROBE_INTERVAL:
+            return False
+        self._last_unsupported_probe = now
+        return True
+
     async def _async_update_data(self) -> PolestarVehicleData:
         previous = self.data or PolestarVehicleData()
         self._poll_count += 1
@@ -464,7 +475,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         values, successful_fetches = await self._async_fetch_values(
             _FETCH_ATTR_LOOKUP,
             previous,
-            probe_unsupported=self._poll_count % _UNSUPPORTED_REPROBE_CYCLES == 1,
+            probe_unsupported=self._claim_unsupported_probe(),
         )
 
         if successful_fetches == 0:
