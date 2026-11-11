@@ -26,16 +26,26 @@ def _push_coordinator(module):
     return coordinator
 
 
-def test_push_updates_data_and_listeners_without_resetting_timer(monkeypatch):
+def test_apply_values_updates_data_and_notifies_without_resetting_timer(monkeypatch):
     module, _ = _load(monkeypatch, FakeRegistry())
     coordinator = _push_coordinator(module)
-    data = module.PolestarVehicleData()
+    generation = coordinator.next_fetch_generation()
 
-    coordinator._async_push_data(data)
+    coordinator._async_apply_values({"battery": "battery-1"}, generation)
 
-    assert coordinator.data is data
+    assert coordinator.data.battery == "battery-1"
     assert coordinator.last_update_success is True
     assert coordinator.listener_calls == 1
+
+
+def test_apply_values_with_an_unchanged_value_does_not_notify(monkeypatch):
+    module, _ = _load(monkeypatch, FakeRegistry())
+    coordinator = _push_coordinator(module)
+    coordinator.data = module.PolestarVehicleData(battery="battery-1")
+
+    coordinator._async_apply_values({"battery": "battery-1"}, coordinator.next_fetch_generation())
+
+    assert coordinator.listener_calls == 0
 
 
 @pytest.mark.asyncio

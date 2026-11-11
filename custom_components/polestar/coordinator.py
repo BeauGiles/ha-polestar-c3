@@ -210,7 +210,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
                 seconds=entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
             ),
             config_entry=entry,
-            always_update=True,
+            always_update=False,
         )
         self.vehicle = vehicle
         self.climate_preferences = ClimateCommandPreferences()
@@ -508,41 +508,49 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         await self._restart_dead_streams()
         return data
 
-    def _async_push_data(self, data: PolestarVehicleData) -> None:
-        """Publish new data to listeners without restarting the poll timer.
-
-        ``async_set_updated_data`` reschedules the next full poll. Streams push
-        roughly every minute, so using it here meant the periodic poll never ran
-        and poll-only values (target SOC, amp limit, charge timers) went stale.
-        """
-        self.data = data
-        self.last_update_success = True
-        self.async_update_listeners()
-
     def _async_apply_values(self, values: dict[str, Any], generation: int) -> None:
         """Merge fetched/streamed values into the snapshot and push, generation permitting.
 
         An attribute is only overwritten by a fetch newer than the one that
         last wrote it, so a slow write cannot resurrect pre-command state on
-        top of a faster, newer one.
+        top of a faster, newer one. Entities are only notified when a value
+        actually changed: a stream replaying its snapshot on every resubscribe
+        would otherwise rewrite every entity's state each time.
+        """
+        if self._apply_values(values, generation):
+            self.async_update_listeners()
+
+    def _apply_values(self, values: dict[str, Any], generation: int) -> bool:
+        """Merge values into the snapshot; return whether anything changed.
+
+        Sets ``self.data`` directly rather than via ``async_set_updated_data``,
+        which would reschedule the next full poll. Streams push roughly every
+        minute, so using it here meant the periodic poll never ran and
+        poll-only values (target SOC, amp limit, charge timers) went stale.
         """
         if not values:
-            return
+            return False
         fresh = {
             attr: value
             for attr, value in values.items()
             if generation > self._applied_generations.get(attr, 0)
         }
         if not fresh:
-            return
+            return False
         for attr in fresh:
             self._applied_generations[attr] = generation
 
         previous = self.data or PolestarVehicleData()
-        data = replace(previous, **fresh)
-        if "software" in fresh:
+        changed = {attr: value for attr, value in fresh.items() if getattr(previous, attr) != value}
+        if not changed:
+            return False
+
+        data = replace(previous, **changed)
+        if "software" in changed:
             self._update_installed_version_cache(data.software)
-        self._async_push_data(data)
+        self.data = data
+        self.last_update_success = True
+        return True
 
     async def async_request_attrs_refresh(self, *attrs: str) -> None:
         """Refresh only the requested coordinator attributes."""
