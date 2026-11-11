@@ -159,3 +159,8 @@ def is_polestar_4(model_name: str | None, vin: str) -> bool:
 def normalise_steering_wheel_option(option: str) -> str:
     """Steering wheel heating is on/off on a Polestar 4: the car runs any heated level as level3."""
     return "level3" if option in ("level1", "level2") else option
+
+
+def climate_timer_label(slot: int, max_timers: int | None, prefix: str) -> str:
+    """Name of a climate timer slot, without a number when the car has only one timer."""
+    return prefix if max_timers == 1 else f"{prefix} {slot + 1}"

@@ -80,6 +80,11 @@ def _heating_intensity_name(value: HeatingIntensity | None) -> str | None:
     return value.name.lower()
 
 
+def _location_reports_motion(data: PolestarVehicleData) -> bool:
+    location = data.location
+    return location is None or any((location.heading, location.speed, location.altitude))
+
+
 def _timestamp_or_none(seconds: float | None):
     return dt_util.utc_from_timestamp(seconds) if seconds is not None else None
 
@@ -227,6 +232,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="avg_consumption",
+        fetch_attr="avg_consumption",
         name="Average consumption",
         device_class=SensorDeviceClass.ENERGY_DISTANCE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -236,6 +242,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="avg_consumption_auto",
+        fetch_attr="avg_consumption_auto",
         name="Average consumption (auto)",
         device_class=SensorDeviceClass.ENERGY_DISTANCE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -246,6 +253,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="avg_consumption_since_charge",
+        fetch_attr="avg_consumption_since_charge",
         name="Average consumption since charge",
         device_class=SensorDeviceClass.ENERGY_DISTANCE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -280,6 +288,8 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="heading",
+        # The C3 location service sends only a position, so these stay 0 on it.
+        required_data=_location_reports_motion,
         name="Heading",
         native_unit_of_measurement="°",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -287,6 +297,8 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="speed",
+        # The C3 location service sends only a position, so these stay 0 on it.
+        required_data=_location_reports_motion,
         name="Speed",
         device_class=SensorDeviceClass.SPEED,
         native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
@@ -295,6 +307,8 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="altitude",
+        # The C3 location service sends only a position, so these stay 0 on it.
+        required_data=_location_reports_motion,
         name="Altitude",
         device_class=SensorDeviceClass.DISTANCE,
         native_unit_of_measurement=UnitOfLength.METERS,
@@ -534,6 +548,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="climate_rear_left_seat",
+        fetch_attr="rear_seat_heating",
         name="Climate rear left seat",
         device_class=SensorDeviceClass.ENUM,
         options=["off", "level1", "level2", "level3"],
@@ -542,6 +557,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     ),
     PolestarSensorDescription(
         key="climate_rear_right_seat",
+        fetch_attr="rear_seat_heating",
         name="Climate rear right seat",
         device_class=SensorDeviceClass.ENUM,
         options=["off", "level1", "level2", "level3"],
