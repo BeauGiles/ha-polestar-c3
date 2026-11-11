@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from .test_unsupported_entities import FakeRegistry, FakeVehicle, _coordinator, _load
+from .test_unsupported_entities import FakeRegistry, FakeVehicle, _coordinator, _load, _unsupported
 
 
 def _push_coordinator(module):
@@ -54,6 +54,30 @@ async def test_stream_updates_do_not_reset_poll_timer(monkeypatch):
 
     assert coordinator.data.battery == "battery-2"
     assert coordinator.listener_calls == 2
+
+
+@pytest.mark.asyncio
+async def test_post_command_refresh_skips_unsupported_endpoints(monkeypatch):
+    """A command's follow-up refreshes must not re-call an UNIMPLEMENTED endpoint.
+
+    Each command schedules several follow-up refreshes; with probing on by
+    default a command touching an endpoint the car doesn't serve would call
+    it that many extra times. Re-probing is left to the scheduled daily probe.
+    """
+    module, _ = _load(monkeypatch, FakeRegistry())
+    vehicle = FakeVehicle({"amp_limit": _unsupported("AMP_LIMIT")})
+    coordinator = _push_coordinator(module)
+    coordinator.vehicle = vehicle
+
+    values, successful = await coordinator._async_fetch_values(
+        ("amp_limit", "battery"), module.PolestarVehicleData()
+    )
+    assert "amp_limit" in coordinator._unsupported_fetches
+
+    vehicle.calls.clear()
+    await coordinator.async_request_attrs_refresh("amp_limit", "battery")
+
+    assert vehicle.calls == ["battery"]
 
 
 @pytest.mark.asyncio

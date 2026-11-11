@@ -552,7 +552,12 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
 
         generation = self.next_fetch_generation()
         previous = self.data or PolestarVehicleData()
-        values, successful_fetches = await self._async_fetch_values(attrs, previous)
+        # Each command schedules several follow-up refreshes; probing would
+        # otherwise call an UNIMPLEMENTED endpoint that many extra times.
+        # Re-probing is left to the scheduled once-a-day probe.
+        values, successful_fetches = await self._async_fetch_values(
+            attrs, previous, probe_unsupported=False
+        )
         if successful_fetches == 0:
             return
 
