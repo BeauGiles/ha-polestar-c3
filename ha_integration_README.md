@@ -1,4 +1,4 @@
-# Unofficial Polestar for Home Assistant
+# Polestar C3 for Home Assistant
 
 Unofficial Home Assistant custom integration for Polestar vehicles. Communicates with Polestar's gRPC backend directly via [`unofficial-polestar-api`](https://pypi.org/project/unofficial-polestar-api/).
 
@@ -7,8 +7,8 @@ Unofficial Home Assistant custom integration for Polestar vehicles. Communicates
 Requires [HACS](https://hacs.xyz/) installed on your Home Assistant instance.
 
 1. In HA, go to **HACS → ⋮ (top right) → Custom repositories**
-2. Paste `kildahldev/unofficial-polestar-api` and select **Integration**
-3. Click **Add**, then find **Unofficial Polestar** in HACS and click **Download**
+2. Paste `BeauGiles/ha-polestar-c3` and select **Integration**
+3. Click **Add**, then find **Polestar C3** in HACS and click **Download**
 4. Restart Home Assistant
 
 Then add the integration via **Settings → Devices & Services → Add Integration → Polestar**. Enter your Polestar ID email and password — the integration discovers the cars on your account and lets you **pick your vehicle from a list** and set the polling interval. Each config entry sets up one vehicle — to add more than one car, add the integration again and pick the other vehicle.
@@ -24,10 +24,10 @@ Features vary between models, and are yet to be fully documented
 | Platform | Count | Examples |
 |----------|-------|---------|
 | Sensor | 48 | Battery level, charging status, availability reason, climate status, health warnings, tyre pressures, charge locations |
-| Binary sensor | 25 | Charging, plugged in, locked, doors, windows, hood, tailgate, tank lid, available |
+| Binary sensor | 26 | Charging, plugged in, locked, doors, windows, hood, tailgate, tank lid, available, remote function data sharing |
 | Device tracker | 2 | GPS location, parked location |
 | Lock | 1 | Central lock |
-| Switch | 4 | Climate, pre-cleaning, charging, charge timer |
+| Switch | 5 | Climate, pre-cleaning, charging, charge timer, Air Purification *(alias of pre-cleaning; disabled by default)* |
 | Number | 4 | Target SOC, charging amp limit, climate target temperature, timer target temperature |
 | Button | 7 | Flash lights, honk, honk and flash, refresh, open/close windows, unlock trunk |
 | Select | 11 | Target SOC mode, climate start seat/steering heating, climate timer default seat/steering heating and battery preconditioning |

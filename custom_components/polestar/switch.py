@@ -44,6 +44,19 @@ SWITCHES: tuple[PolestarSwitchDescription, ...] = (
         turn_off_fn=lambda c: c.async_stop_precleaning(),
     ),
     PolestarSwitchDescription(
+        # Same backend feature as "precleaning" (invocation.InvocationService
+        # /PreCleaning) under the official app's other name for it. Disabled
+        # by default to avoid a confusing duplicate switch for most users;
+        # enable it if you'd rather see "Air Purification" in your UI.
+        key="air_purification",
+        name="Air Purification",
+        icon="mdi:air-purifier",
+        entity_registry_enabled_default=False,
+        is_on_fn=lambda d: d.precleaning.is_running if d.precleaning else None,
+        turn_on_fn=lambda c: c.async_start_precleaning(),
+        turn_off_fn=lambda c: c.async_stop_precleaning(),
+    ),
+    PolestarSwitchDescription(
         key="charging",
         name="Charging",
         icon="mdi:ev-station",

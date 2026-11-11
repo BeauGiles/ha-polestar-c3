@@ -1,4 +1,9 @@
-"""Backend profiles — gRPC service paths per backend type."""
+"""Backend profile — gRPC service paths for the Polestar C3 backend.
+
+This library speaks exclusively to C3 (Volvo Cars Cloud Connectivity),
+discovered via ``discovery.discover_c3_endpoint()``. The paths below were
+observed from the official Android app's C3-flavoured gRPC stubs.
+"""
 
 from __future__ import annotations
 
@@ -7,11 +12,10 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class BackendProfile:
-    """gRPC service paths for a specific backend.
+    """gRPC service paths for the C3 backend.
 
-    Each backend (C3, PCCS, etc.) exposes the same logical services under
-    different gRPC package paths.  A BackendProfile maps every service to
-    its concrete path so service clients stay backend-agnostic.
+    Every service client takes its service path from here so the concrete
+    path strings live in one place.
     """
 
     # vehiclestates
@@ -39,24 +43,8 @@ class BackendProfile:
     ota_discovery_svc: str = "/ota_mobcache.OtaDiscoveryService"
     ota_scheduler_svc: str = "/ota_mobcache.SchedulerService"
 
+    # user services (data sharing / privacy consent)
+    privacy_settings_svc: str = "/userServices.PrivacySettings"
+
 
 C3 = BackendProfile()
-
-PCCS = BackendProfile(
-    battery_svc="/pccs.vehiclestates.services.battery.v1.BatteryService",
-    availability_svc="/pccs.vehiclestates.services.availability.v1.AvailabilityService",
-    climate_svc="/pccs.vehiclestates.services.parkingclimatization.v1.ParkingClimatizationService",
-    dashboard_svc="/pccs.vehiclestates.services.dashboard.v1.DashboardService",
-    exterior_svc="/pccs.vehiclestates.services.exterior.v1.ExteriorService",
-    health_svc="/pccs.vehiclestates.services.health.v1.HealthService",
-    odometer_svc="/pccs.vehiclestates.services.odometer.v1.OdometerService",
-    precleaning_svc="/pccs.vehiclestates.services.precleaning.v1.PreCleaningService",
-    charge_location_svc="/pccs.chronos.services.v1.ChargeLocationService",
-    charge_now_svc="/pccs.chronos.services.v1.ChargeNowService",
-    parking_climate_timer_svc="/pccs.chronos.services.v1.ParkingClimateTimerService",
-    target_soc_svc="/pccs.chronos.services.v1.TargetSocService",
-    amp_limit_svc="/pccs.chronos.services.v1.AmpLimitService",
-    charge_timer_svc="/pccs.chronos.services.v2.GlobalChargeTimerService",
-    invocation_svc="/pccs.invocation.v1.InvocationService",
-    location_svc="/pccs.location.v1.LocationService",
-)

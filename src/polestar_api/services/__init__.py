@@ -7,6 +7,7 @@ from .charge_location import ChargeLocationServiceClient
 from .charge_now import ChargeNowServiceClient
 from .charge_timer import ChargeTimerServiceClient
 from .climate import ClimateServiceClient
+from .consent import ConsentServiceClient
 from .dashboard import DashboardServiceClient
 from .exterior import ExteriorServiceClient
 from .health import HealthServiceClient
@@ -27,6 +28,7 @@ __all__ = [
     "ChargeNowServiceClient",
     "ChargeTimerServiceClient",
     "ClimateServiceClient",
+    "ConsentServiceClient",
     "DashboardServiceClient",
     "ExteriorServiceClient",
     "HealthServiceClient",
