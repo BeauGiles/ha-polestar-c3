@@ -193,6 +193,7 @@ def _coordinator(module, vehicle):
     coordinator._empty_fetches = set()
     coordinator._no_data_fetches = set()
     coordinator._stream_last_data = {}
+    coordinator._stream_tasks = {}
     coordinator._poll_count = 0
     coordinator._generation = 0
     coordinator._applied_generations = {}

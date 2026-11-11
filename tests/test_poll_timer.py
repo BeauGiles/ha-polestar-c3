@@ -91,6 +91,70 @@ async def test_post_command_refresh_skips_unsupported_endpoints(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_post_command_refresh_stops_once_the_value_changes(monkeypatch):
+    """Stop polling once the car has reported back, rather than running the
+    whole fixed schedule regardless."""
+    module, _ = _load(monkeypatch, FakeRegistry())
+    coordinator = _push_coordinator(module)
+    coordinator.data = module.PolestarVehicleData(battery="old")
+
+    async def get_battery():
+        return "new"
+
+    coordinator.vehicle.get_battery = get_battery
+
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr(module.asyncio, "sleep", fake_sleep)
+
+    await coordinator.async_refresh_after_command("battery")
+
+    assert sleeps == [module._POST_COMMAND_REFRESH_DELAYS[0]]
+    assert coordinator.data.battery == "new"
+
+
+@pytest.mark.asyncio
+async def test_post_command_refresh_runs_the_full_schedule_without_a_change(monkeypatch):
+    module, _ = _load(monkeypatch, FakeRegistry())
+    coordinator = _push_coordinator(module)
+    coordinator.data = module.PolestarVehicleData(battery="battery")  # FakeVehicle's default
+
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr(module.asyncio, "sleep", fake_sleep)
+
+    await coordinator.async_refresh_after_command("battery")
+
+    assert sleeps == list(module._POST_COMMAND_REFRESH_DELAYS)
+
+
+@pytest.mark.asyncio
+async def test_streamed_attr_only_gets_the_late_fallback_refreshes(monkeypatch):
+    """A running stream reports the change itself; skip the early steps."""
+    module, _ = _load(monkeypatch, FakeRegistry())
+    coordinator = _push_coordinator(module)
+    coordinator.data = module.PolestarVehicleData(battery="battery")
+    coordinator._stream_tasks["battery"] = asyncio.get_event_loop().create_future()
+
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr(module.asyncio, "sleep", fake_sleep)
+
+    await coordinator.async_refresh_after_command("battery")
+
+    assert sleeps == list(module._STREAMED_POST_COMMAND_REFRESH_DELAYS)
+
+
+@pytest.mark.asyncio
 async def test_resubscribe_after_clean_close_respects_the_floor(monkeypatch):
     """A server closing the stream after every message must not become a tight loop."""
     module, _ = _load(monkeypatch, FakeRegistry())
