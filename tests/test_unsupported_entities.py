@@ -187,6 +187,8 @@ def _coordinator(module, vehicle):
     coordinator._no_data_fetches = set()
     coordinator._stream_last_data = {}
     coordinator._poll_count = 0
+    coordinator._generation = 0
+    coordinator._applied_generations = {}
     coordinator._merge_partial_update = lambda attr, previous, result: result
     return coordinator
 

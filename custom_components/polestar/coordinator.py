@@ -59,7 +59,12 @@ if TYPE_CHECKING:
     from polestar_api.vehicle import Vehicle
 
 _LOGGER = logging.getLogger(__name__)
-_POST_COMMAND_REFRESH_DELAYS: tuple[int, ...] = (3, 5)
+# Measured against a real car: the cloud reflects a lock/unlock roughly 3-30s
+# after the command is accepted, and a climatisation start can take well over a
+# minute. A schedule that stops too early makes the entity fall back to the
+# pre-command snapshot before the car has reported anything, which reads as
+# the command having been silently undone.
+_POST_COMMAND_REFRESH_DELAYS: tuple[int, ...] = (3, 5, 10, 15, 30, 60)
 # Endpoints that answered UNIMPLEMENTED are skipped on scheduled polls, but
 # re-probed this often in case the backend starts serving them again.
 _UNSUPPORTED_REPROBE_CYCLES = 6
@@ -224,6 +229,11 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         self._last_started_values: dict[str, Any] = {}
         self._stream_last_data: dict[str, float] = {}
         self._poll_count: int = 0
+        # Polls, post-command refreshes and streams all write here concurrently;
+        # a fetch claims a generation before it starts so a slow one can't land
+        # after a faster one and resurrect pre-command state.
+        self._generation: int = 0
+        self._applied_generations: dict[str, int] = {}
         self._command_failure_listeners: list[Callable[[], None]] = []
         add_listener = getattr(vehicle, "add_invocation_listener", None)
         self._remove_invocation_listener = add_listener(self._handle_invocation_result) if add_listener else None
@@ -262,6 +272,12 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
     @staticmethod
     def _command_succeeded(response: Any) -> bool:
         """Interpret common command response types."""
+        # CarLockResponse carries its own failure code alongside a generic
+        # invocation status that still reads as success — the car refusing to
+        # lock because a door is ajar shows up only here.
+        if getattr(response, "lock_error", 0):
+            return False
+
         invocation = getattr(response, "response", None)
         if invocation is not None:
             return invocation.status in _COMMAND_INVOCATION_SUCCESS
@@ -282,6 +298,10 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
     @staticmethod
     def _command_error_message(response: Any, fallback: str) -> str:
         """Build a useful error message from the command response."""
+        lock_error = getattr(response, "lock_error", 0)
+        if lock_error:
+            return f"{fallback} (lock error {lock_error})"
+
         invocation = getattr(response, "response", None)
         if invocation is not None:
             if invocation.message:
@@ -424,9 +444,23 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
 
         return values, successful_fetches
 
+    def next_fetch_generation(self) -> int:
+        """Claim the next fetch sequence number.
+
+        Callers take one *before* awaiting their fetch, so results are ordered
+        by when they were asked for rather than by when they happened to come
+        back. A poll, a post-command refresh and a stream can all finish in
+        whatever order the network decides; without this, a poll that started
+        before a command could land on top of that command's own refresh and
+        resurrect pre-command state.
+        """
+        self._generation += 1
+        return self._generation
+
     async def _async_update_data(self) -> PolestarVehicleData:
         previous = self.data or PolestarVehicleData()
         self._poll_count += 1
+        generation = self.next_fetch_generation()
         values, successful_fetches = await self._async_fetch_values(
             _FETCH_ATTR_LOOKUP,
             previous,
@@ -440,6 +474,17 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
 
         if self.data is None:
             self._record_no_data_fetches()
+
+        # A faster post-command refresh or stream write may have landed for
+        # some attrs while this (slower, full) poll was still in flight. Don't
+        # let it resurrect what those newer writes already superseded.
+        current = self.data
+        for attr in values:
+            if generation > self._applied_generations.get(attr, 0):
+                self._applied_generations[attr] = generation
+            elif current is not None:
+                values[attr] = getattr(current, attr)
+
         data = PolestarVehicleData(**values)
         self._update_installed_version_cache(data.software)
         self._unsupported_commands.clear()
@@ -457,21 +502,44 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         self.last_update_success = True
         self.async_update_listeners()
 
+    def _async_apply_values(self, values: dict[str, Any], generation: int) -> None:
+        """Merge fetched/streamed values into the snapshot and push, generation permitting.
+
+        An attribute is only overwritten by a fetch newer than the one that
+        last wrote it, so a slow write cannot resurrect pre-command state on
+        top of a faster, newer one.
+        """
+        if not values:
+            return
+        fresh = {
+            attr: value
+            for attr, value in values.items()
+            if generation > self._applied_generations.get(attr, 0)
+        }
+        if not fresh:
+            return
+        for attr in fresh:
+            self._applied_generations[attr] = generation
+
+        previous = self.data or PolestarVehicleData()
+        data = replace(previous, **fresh)
+        if "software" in fresh:
+            self._update_installed_version_cache(data.software)
+        self._async_push_data(data)
+
     async def async_request_attrs_refresh(self, *attrs: str) -> None:
         """Refresh only the requested coordinator attributes."""
         if not attrs:
             await self.async_request_refresh()
             return
 
+        generation = self.next_fetch_generation()
         previous = self.data or PolestarVehicleData()
         values, successful_fetches = await self._async_fetch_values(attrs, previous)
         if successful_fetches == 0:
             return
 
-        data = replace(previous, **values)
-        if "software" in values:
-            self._update_installed_version_cache(data.software)
-        self._async_push_data(data)
+        self._async_apply_values(values, generation)
 
     _STREAMS: dict[str, str] = {
         "battery": "stream_battery",
@@ -561,7 +629,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
                     self._stream_last_data[attr] = time.monotonic()
                     current = self.data or PolestarVehicleData()
                     merged_value = self._merge_partial_update(attr, getattr(current, attr), value)
-                    self._async_push_data(replace(current, **{attr: merged_value}))
+                    self._async_apply_values({attr: merged_value}, self.next_fetch_generation())
                 if received:
                     # Server closed a subscription after delivering data (normal
                     # GOAWAY behaviour) — resubscribe straight away.
