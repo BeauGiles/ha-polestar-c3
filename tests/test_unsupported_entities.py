@@ -178,11 +178,18 @@ class FakeVehicle:
         self.calls.append("battery")
         return "battery"
 
+    async def get_charge_locations(self):
+        self.calls.append("charge_locations")
+        if "charge_locations" in self.errors:
+            raise self.errors["charge_locations"]
+        return "charge_locations"
+
 
 def _coordinator(module, vehicle):
     coordinator = module.PolestarCoordinator.__new__(module.PolestarCoordinator)
     coordinator.vehicle = vehicle
     coordinator._unsupported_fetches = set()
+    coordinator._invalid_argument_counts = {}
     coordinator._empty_fetches = set()
     coordinator._no_data_fetches = set()
     coordinator._stream_last_data = {}
@@ -568,6 +575,53 @@ async def test_unsupported_fetch_probing_is_controlled_by_the_flag(monkeypatch):
     assert vehicle.calls == ["amp_limit"]
     assert successful == 1
     assert coordinator.is_fetch_supported("amp_limit")
+
+
+@pytest.mark.asyncio
+async def test_repeated_invalid_argument_marks_the_endpoint_unsupported(monkeypatch):
+    """The P4 rejects charge-location reads with INVALID_ARGUMENT every time;
+    after a few in a row they are skipped like UNIMPLEMENTED, not retried."""
+    coordinator_module, _ = _load(monkeypatch, FakeRegistry())
+    error = GRPCError(Status.INVALID_ARGUMENT, "Validation failed")
+    vehicle = FakeVehicle({"charge_locations": error})
+    coordinator = _coordinator(coordinator_module, vehicle)
+    previous = coordinator_module.PolestarVehicleData()
+
+    unsupported_after = coordinator_module._INVALID_ARGUMENT_UNSUPPORTED_AFTER
+    for _ in range(unsupported_after - 1):
+        await coordinator._async_fetch_values(("charge_locations",), previous)
+        assert "charge_locations" not in coordinator._unsupported_fetches
+
+    values, _ = await coordinator._async_fetch_values(("charge_locations",), previous)
+    assert "charge_locations" in coordinator._unsupported_fetches
+    assert values["charge_locations"] is None
+
+    vehicle.calls.clear()
+    values, _ = await coordinator._async_fetch_values(
+        ("charge_locations",), previous, probe_unsupported=False
+    )
+    assert vehicle.calls == []
+
+
+@pytest.mark.asyncio
+async def test_a_success_resets_the_invalid_argument_count(monkeypatch):
+    """Only consecutive INVALID_ARGUMENTs count; one transient error never
+    takes an endpoint off the poll."""
+    coordinator_module, _ = _load(monkeypatch, FakeRegistry())
+    error = GRPCError(Status.INVALID_ARGUMENT, "Validation failed")
+    vehicle = FakeVehicle({})
+    coordinator = _coordinator(coordinator_module, vehicle)
+    previous = coordinator_module.PolestarVehicleData()
+
+    unsupported_after = coordinator_module._INVALID_ARGUMENT_UNSUPPORTED_AFTER
+    for _ in range(3):
+        vehicle.errors["charge_locations"] = error
+        for _ in range(unsupported_after - 1):
+            await coordinator._async_fetch_values(("charge_locations",), previous)
+        vehicle.errors.pop("charge_locations")
+        await coordinator._async_fetch_values(("charge_locations",), previous)
+
+    assert "charge_locations" not in coordinator._unsupported_fetches
 
 
 def test_odometer_merge_rejects_a_lower_reading(monkeypatch):

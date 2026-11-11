@@ -75,6 +75,10 @@ _POST_COMMAND_REFRESH_DELAYS: tuple[int, ...] = (3, 5, 10, 15, 30, 60)
 # re-probed this often (seconds) in case the backend starts serving them again.
 # Elapsed time rather than a poll count, so it holds if the poll interval changes.
 _UNSUPPORTED_REPROBE_INTERVAL = 24 * 60 * 60
+# Some endpoints answer INVALID_ARGUMENT on every call for a model that doesn't
+# support them. One such answer can be a transient backend hiccup, so only
+# this many in a row mark the endpoint unsupported like UNIMPLEMENTED does.
+_INVALID_ARGUMENT_UNSUPPORTED_AFTER = 3
 # A stream that stops pushing without erroring is indistinguishable from a healthy
 # idle one, so resubscribe after this many poll intervals of silence.
 _STREAM_STALE_POLL_INTERVALS = 3
@@ -219,6 +223,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         self._unsupported_streams: set[str] = set()
         self._unsupported_commands: set[str] = set()
         self._unsupported_fetches: set[str] = set()
+        self._invalid_argument_counts: dict[str, int] = {}
         # What the car says it lacks. Some names are data fetches that are no longer polled; the
         # others are capability names that entities use to say they need the feature.
         for flag, names in _CAPABILITY_FETCHES:
@@ -426,7 +431,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
             if isinstance(result, (AuthError, TokenExpiredError)):
                 raise ConfigEntryAuthFailed(str(result)) from result
             if isinstance(result, BaseException):
-                if is_unsupported_feature_error(result):
+                if self._fetch_is_unsupported(attr, result):
                     _LOGGER.info("%s is not supported by vehicle %s; it will not be polled", attr, self.vehicle.vin)
                     self._unsupported_fetches.add(attr)
                     # Clear rather than carry the last good value forward: an
@@ -438,6 +443,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
                 values[attr] = getattr(previous, attr)
                 continue
 
+            self._invalid_argument_counts.pop(attr, None)
             if attr in self._unsupported_fetches:
                 self._unsupported_fetches.discard(attr)
                 _LOGGER.info("Fetch %s is supported again for %s", attr, self.vehicle.vin)
@@ -451,6 +457,16 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
             successful_fetches += 1
 
         return values, successful_fetches
+
+    def _fetch_is_unsupported(self, attr: str, result: BaseException) -> bool:
+        """Whether a failed fetch means the backend does not serve this endpoint."""
+        if is_unsupported_feature_error(result):
+            return True
+        if not (isinstance(result, GRPCError) and result.status is GrpcStatus.INVALID_ARGUMENT):
+            return False
+        count = self._invalid_argument_counts.get(attr, 0) + 1
+        self._invalid_argument_counts[attr] = count
+        return count >= _INVALID_ARGUMENT_UNSUPPORTED_AFTER or attr in self._unsupported_fetches
 
     def next_fetch_generation(self) -> int:
         """Claim the next fetch sequence number.
