@@ -16,6 +16,8 @@ from polestar_api.models.exterior import LockStatus
 from .const import DOMAIN
 from .entity import PolestarEntity
 
+PARALLEL_UPDATES = 1
+
 # How long to keep showing locking/unlocking while waiting for the car to confirm.
 PENDING_TIMEOUT = 60.0
 

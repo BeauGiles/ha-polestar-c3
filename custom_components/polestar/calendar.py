@@ -20,6 +20,8 @@ from polestar_api.models.common import Weekday
 from polestar_api.models.parking_climate_timer import ParkingClimateTimer
 from .utils import climate_timer_label, serialize_parking_climate_timer
 
+PARALLEL_UPDATES = 1
+
 _CALENDAR_SLOTS = (0, 1, 2)
 _WEEKDAY_RRULE = {
     Weekday.MONDAY: "MO",

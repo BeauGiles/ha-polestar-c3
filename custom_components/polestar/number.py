@@ -20,6 +20,8 @@ from .entity import OptimisticStateMixin, PolestarEntity, async_filter_supported
 from polestar_api.models.charging import ChargeTargetLevelSettingType
 from polestar_api.models.parking_climate_timer import ParkingClimateTimerSettings
 
+PARALLEL_UPDATES = 1
+
 
 @dataclass(frozen=True, kw_only=True)
 class PolestarNumberDescription(NumberEntityDescription):

@@ -16,6 +16,8 @@ from polestar_api.models.honkflash import HonkFlashAction
 from .const import DOMAIN
 from .entity import PolestarEntity, async_filter_supported_entities, async_remove_registered_entities
 
+PARALLEL_UPDATES = 1
+
 
 @dataclass(frozen=True, kw_only=True)
 class PolestarButtonDescription(ButtonEntityDescription):

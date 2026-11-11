@@ -23,6 +23,8 @@ from .coordinator import PolestarVehicleData
 from .entity import PolestarEntity, async_filter_supported_entities
 from .utils import state_icon
 
+PARALLEL_UPDATES = 0
+
 
 def _safe(fn: Callable[[PolestarVehicleData], Any], data: PolestarVehicleData) -> bool | None:
     try:

@@ -23,6 +23,8 @@ from polestar_api.models.parking_climate_timer import (
     SeatHeatingSettings,
 )
 
+PARALLEL_UPDATES = 1
+
 _HEATING_OPTIONS = ["unspecified", "off", "level1", "level2", "level3"]
 _STEERING_WHEEL_OPTIONS = ["unspecified", "off", "level3"]
 _LIVE_UPDATE_ELEMENTS = {

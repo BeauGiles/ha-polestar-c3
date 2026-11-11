@@ -15,6 +15,8 @@ from .const import DOMAIN
 from .coordinator import PolestarCoordinator
 from .entity import OptimisticStateMixin, PolestarEntity
 
+PARALLEL_UPDATES = 1
+
 
 @dataclass(frozen=True, kw_only=True)
 class PolestarTimeDescription(TimeEntityDescription):
