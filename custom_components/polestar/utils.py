@@ -405,17 +405,19 @@ def last_seen(data: Any) -> datetime | None:
     return datetime.fromtimestamp(max(seconds), UTC) if seconds else None
 
 
-def connection_text(data: Any, local_time: Any) -> str:
-    """One sentence about whether commands can reach the car (``local_time(dt)`` formats a time as HH:MM)."""
+def connection_text(data: Any) -> str:
+    """One sentence about whether commands can reach the car.
+
+    No clock time in it: a changing sentence would add a history entry on every update. The time the car
+    was last seen is the Last seen sensor, and the Connection sensor's ``offline_since`` attribute.
+    """
     availability = getattr(data, "availability", None)
     if availability is None:
         return "Unknown: Polestar does not say whether the car is online."
     if availability.is_available:
         return "Online: the car can receive commands."
-    seen = last_seen(data)
-    when = f" since {local_time(seen)}" if seen is not None else ""
     why = _REASON_TEXT.get(_reason_key(availability), "no connection to the car")
-    return f"Offline{when}: {why}. Commands may not reach the car until it is online again."
+    return f"Offline: {why}. Commands may not reach the car until it is online again."
 
 
 def command_blocker(data: Any, local_time: Any) -> str | None:
@@ -430,3 +432,12 @@ def command_blocker(data: Any, local_time: Any) -> str | None:
     when = f" since {local_time(seen)}" if seen is not None else ""
     state = "in use" if key == "CAR_IN_USE" else f"offline{when}"
     return f"The car is {state} ({_REASON_TEXT[key]}). Nothing was sent. Try again when it is available."
+
+
+def connection_attributes(data: Any) -> dict[str, Any]:
+    """When the car was last heard from, while it is offline (kept out of the Connection state)."""
+    availability = getattr(data, "availability", None)
+    if availability is None or availability.is_available:
+        return {}
+    seen = last_seen(data)
+    return {"offline_since": seen.isoformat()} if seen is not None else {}

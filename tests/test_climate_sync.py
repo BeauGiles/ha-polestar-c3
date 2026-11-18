@@ -223,11 +223,13 @@ def test_last_seen_is_the_newest_car_timestamp(utils):
 
 
 def test_connection_text(utils):
-    fmt = lambda moment: "19:32"  # noqa: E731
-    assert utils.connection_text(_data(True), fmt).startswith("Online")
-    off = utils.connection_text(_data(False, "NO_INTERNET"), fmt)
-    assert off.startswith("Offline since 19:32: the car has no mobile internet")
-    assert utils.connection_text(type("D", (), {"availability": None})(), fmt).startswith("Unknown")
+    assert utils.connection_text(_data(True)).startswith("Online")
+    off = utils.connection_text(_data(False, "NO_INTERNET"))
+    # No clock time in the state, or every update would be a new history entry.
+    assert off.startswith("Offline: the car has no mobile internet")
+    assert utils.connection_text(_data(False, "NO_INTERNET")) == off
+    assert utils.connection_text(type("D", (), {"availability": None})()).startswith("Unknown")
+    assert utils.connection_attributes(_data(True)) == {}
 
 
 def test_commands_are_only_refused_when_they_cannot_reach_the_car(utils):
