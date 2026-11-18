@@ -129,17 +129,6 @@ def _build_week(structure_week: str | None) -> str | None:
     return structure_week
 
 
-def _energy_needed_kwh(data: PolestarVehicleData, capacity_kwh: float) -> float | None:
-    """Energy needed to reach target SOC, estimated from usable capacity and current/target charge levels."""
-    if data.battery is None or data.target_soc is None:
-        return None
-    current = data.battery.charge_level
-    target = data.target_soc.target_level
-    if target <= current:
-        return None
-    return capacity_kwh * (target - current) / 100
-
-
 def _current_charge_location_state(data: PolestarVehicleData) -> str | None:
     location_id = (data.current_charge_location or {}).get("location_id")
     if not location_id:
