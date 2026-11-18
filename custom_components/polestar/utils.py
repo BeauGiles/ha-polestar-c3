@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time as dt_time
+from datetime import UTC, datetime, time as dt_time
 from enum import IntEnum
 from typing import Any
 
@@ -331,3 +331,64 @@ def alarm_triggered(exterior: Any) -> bool | None:
     if not states:
         return None
     return any(state == AlarmStatus.TRIGGERED for state in states)
+
+
+# The car's reasons for being unavailable, in plain words.
+_REASON_TEXT = {
+    "NO_INTERNET": "the car has no mobile internet (weak signal?)",
+    "POWER_SAVING_MODE": "the car is in power saving mode",
+    "CAR_IN_USE": "the car is in use",
+    "OTA_INSTALLATION_IN_PROGRESS": "a software update is installing",
+    "STOLEN_VEHICLE_TRACKING_IN_PROGRESS": "stolen vehicle tracking is active",
+    "SERVICE_MODE_ACTIVE": "the car is in service mode",
+}
+# Reasons for which a command cannot reach the car. Power saving and "in use" are left out: the car wakes
+# for a command, or the app can still send one, so those commands are not refused.
+_COMMAND_BLOCKING_REASONS = frozenset(
+    {"NO_INTERNET", "OTA_INSTALLATION_IN_PROGRESS", "STOLEN_VEHICLE_TRACKING_IN_PROGRESS", "SERVICE_MODE_ACTIVE"}
+)
+
+
+def _reason_key(availability: Any) -> str:
+    name = getattr(getattr(availability, "unavailable_reason", None), "name", "") or ""
+    return "" if name == "UNSPECIFIED" else name
+
+
+def last_seen(data: Any) -> datetime | None:
+    """The newest car-side time in the data Polestar sent (the car's own time, not our poll time)."""
+    seconds = []
+    for part, attr in (
+        ("battery", "timestamp"), ("odometer", "timestamp"), ("availability", "timestamp"),
+        ("health", "timestamp"), ("precleaning", "timestamp"), ("connectivity", "updated_timestamp"),
+    ):
+        stamp = getattr(getattr(data, part, None), attr, None)
+        value = getattr(stamp, "seconds", 0)
+        if isinstance(value, int) and value > 0:
+            seconds.append(value)
+    return datetime.fromtimestamp(max(seconds), UTC) if seconds else None
+
+
+def connection_text(data: Any, local_time: Any) -> str:
+    """One sentence about whether commands can reach the car (``local_time(dt)`` formats a time as HH:MM)."""
+    availability = getattr(data, "availability", None)
+    if availability is None:
+        return "Unknown: Polestar does not say whether the car is online."
+    if availability.is_available:
+        return "Online: the car can receive commands."
+    seen = last_seen(data)
+    when = f" since {local_time(seen)}" if seen is not None else ""
+    why = _REASON_TEXT.get(_reason_key(availability), "no connection to the car")
+    return f"Offline{when}: {why}. Commands may not reach the car until it is online again."
+
+
+def command_blocker(data: Any, local_time: Any) -> str | None:
+    """Why a command should not be sent right now, or None when it can go."""
+    availability = getattr(data, "availability", None)
+    if availability is None or availability.is_available:
+        return None
+    key = _reason_key(availability)
+    if key not in _COMMAND_BLOCKING_REASONS:
+        return None
+    seen = last_seen(data)
+    when = f" since {local_time(seen)}" if seen is not None else ""
+    return f"The car is offline{when} ({_REASON_TEXT[key]}). Nothing was sent. Check the Polestar app."

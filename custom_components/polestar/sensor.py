@@ -59,6 +59,8 @@ from .const import CONF_REGISTRATION_PLATE, DOMAIN
 from .coordinator import PolestarVehicleData
 from .entity import PolestarEntity, async_filter_supported_entities
 from .utils import (
+    connection_text,
+    last_seen,
     flatten_attributes,
     weather_attributes,
     climate_end_time,
@@ -592,6 +594,21 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
         options=["off", "level1", "level2", "level3"],
         icon="mdi:steering",
         value_fn=lambda d: _heating_intensity_name(d.climate.steering_wheel) if d.climate else None,
+    ),
+    PolestarSensorDescription(
+        key="connection",
+        translation_key="connection",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:car-connected",
+        value_fn=lambda d: connection_text(d, lambda moment: dt_util.as_local(moment).strftime("%H:%M"))[:255],
+    ),
+    PolestarSensorDescription(
+        key="last_seen",
+        translation_key="last_seen",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:car-wireless",
+        value_fn=last_seen,
     ),
     PolestarSensorDescription(
         key="availability_unavailable_reason",

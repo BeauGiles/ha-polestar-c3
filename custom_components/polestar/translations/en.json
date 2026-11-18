@@ -335,6 +335,9 @@
       "climate_time_remaining": {
         "name": "Climate time remaining"
       },
+      "connection": {
+        "name": "Connection"
+      },
       "current_charge_location": {
         "name": "Current charge location"
       },
@@ -358,6 +361,9 @@
       },
       "internet_activation": {
         "name": "Internet Activation"
+      },
+      "last_seen": {
+        "name": "Last seen"
       },
       "odometer": {
         "name": "Odometer"

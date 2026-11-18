@@ -14,6 +14,7 @@ from grpclib.const import Status as GrpcStatus
 from grpclib.exceptions import GRPCError
 from homeassistant.components import persistent_notification
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.util import dt as dt_util
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from polestar_api.exceptions import AuthError, TokenExpiredError, is_unsupported_feature_error
@@ -57,7 +58,7 @@ from .const import (
     STREAM_MIN_RESUBSCRIBE_INTERVAL,
     STREAM_RETRY_DELAY,
 )
-from .utils import driving, local_utc_offset_minutes, poll_is_active
+from .utils import command_blocker, driving, local_utc_offset_minutes, poll_is_active
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -372,6 +373,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         error_message: str = "Command failed",
         timeout: int = 30,
         capability: str | None = None,
+        require_online: bool = True,
     ) -> Any:
         """Run a remote command and validate its response.
 
@@ -379,6 +381,12 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         UNIMPLEMENTED, the capability is marked as unsupported so entities can
         become unavailable instead of repeatedly failing.
         """
+        if require_online:
+            blocker = command_blocker(
+                self.data, lambda moment: dt_util.as_local(moment).strftime("%H:%M")
+            )
+            if blocker:
+                raise HomeAssistantError(blocker)
         try:
             response = await asyncio.wait_for(command(), timeout=timeout)
         except TimeoutError:
