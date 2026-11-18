@@ -261,6 +261,21 @@ def driving(usage_mode: Any) -> bool | None:
     return name == "driving"
 
 
+def in_use(availability: Any) -> bool | None:
+    """Is the car being used right now (so a remote command cannot reach it)?
+
+    True when the car reports Driving, or reports "unavailable because the car is in use": the Polestar app
+    shows "In use" from that reason. None when there is no availability reading.
+    """
+    if availability is None:
+        return None
+    if driving(getattr(availability, "usage_mode", None)) is True:
+        return True
+    if _reason_key(availability) == "CAR_IN_USE" and not getattr(availability, "is_available", True):
+        return True
+    return driving(getattr(availability, "usage_mode", None))
+
+
 def level_problem(warning: Any) -> bool | None:
     """A fluid-level warning as a problem flag: off for "no warning", on for too low / critically low."""
     name = enum_name(warning)
@@ -310,7 +325,7 @@ def poll_is_active(data: Any) -> bool:
     if climate is not None and getattr(climate, "is_active", False):
         return True
     availability = getattr(data, "availability", None)
-    return availability is not None and driving(getattr(availability, "usage_mode", None)) is True
+    return in_use(availability) is True
 
 
 def alarm_triggered(exterior: Any) -> bool | None:
@@ -342,10 +357,10 @@ _REASON_TEXT = {
     "STOLEN_VEHICLE_TRACKING_IN_PROGRESS": "stolen vehicle tracking is active",
     "SERVICE_MODE_ACTIVE": "the car is in service mode",
 }
-# Reasons for which a command cannot reach the car. Power saving and "in use" are left out: the car wakes
-# for a command, or the app can still send one, so those commands are not refused.
+# Reasons for which a command cannot reach the car (it is being driven, has no internet, is updating, is in
+# service or tracking a theft). Power saving is left out: the car wakes for a command.
 _COMMAND_BLOCKING_REASONS = frozenset(
-    {"NO_INTERNET", "OTA_INSTALLATION_IN_PROGRESS", "STOLEN_VEHICLE_TRACKING_IN_PROGRESS", "SERVICE_MODE_ACTIVE"}
+    {"CAR_IN_USE", "NO_INTERNET", "OTA_INSTALLATION_IN_PROGRESS", "STOLEN_VEHICLE_TRACKING_IN_PROGRESS", "SERVICE_MODE_ACTIVE"}
 )
 
 
@@ -391,4 +406,5 @@ def command_blocker(data: Any, local_time: Any) -> str | None:
         return None
     seen = last_seen(data)
     when = f" since {local_time(seen)}" if seen is not None else ""
-    return f"The car is offline{when} ({_REASON_TEXT[key]}). Nothing was sent. Check the Polestar app."
+    state = "in use" if key == "CAR_IN_USE" else f"offline{when}"
+    return f"The car is {state} ({_REASON_TEXT[key]}). Nothing was sent. Try again when it is available."

@@ -238,4 +238,20 @@ def test_commands_are_only_refused_when_they_cannot_reach_the_car(utils):
     assert utils.command_blocker(type("D", (), {"availability": None})(), fmt) is None
     blocked = utils.command_blocker(_data(False, "NO_INTERNET"), fmt)
     assert "offline since 19:32" in blocked and "Nothing was sent" in blocked
+    assert "in use" in utils.command_blocker(_data(False, "CAR_IN_USE"), fmt)
     assert utils.command_blocker(_data(False, "OTA_INSTALLATION_IN_PROGRESS"), fmt)
+
+
+def test_in_use_follows_driving_or_the_car_in_use_reason(utils):
+    from types import SimpleNamespace as NS
+
+    def avail(available, reason, mode):
+        return NS(is_available=available, unavailable_reason=NS(name=reason), usage_mode=mode)
+
+    from polestar_api.models.availability import UsageMode
+
+    assert utils.in_use(None) is None
+    assert utils.in_use(avail(True, "UNSPECIFIED", UsageMode.DRIVING)) is True
+    assert utils.in_use(avail(False, "CAR_IN_USE", UsageMode.ACTIVE)) is True  # what the app shows as "In use"
+    assert utils.in_use(avail(True, "CAR_IN_USE", UsageMode.INACTIVE)) is False  # a stale reason on an available car
+    assert utils.in_use(avail(False, "NO_INTERNET", UsageMode.INACTIVE)) is False

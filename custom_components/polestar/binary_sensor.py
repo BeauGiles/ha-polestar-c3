@@ -21,7 +21,7 @@ from polestar_api.models.health import LowVoltageBatteryWarning, ServiceWarning
 from .const import DOMAIN
 from .coordinator import PolestarVehicleData
 from .entity import PolestarEntity, async_filter_supported_entities
-from .utils import alarm_triggered, driving, level_problem as _level_problem, light_attributes, state_icon
+from .utils import alarm_triggered, in_use, level_problem as _level_problem, light_attributes, state_icon
 
 PARALLEL_UPDATES = 0
 
@@ -216,7 +216,7 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         key="in_use",
         translation_key="in_use",
         device_class=BinarySensorDeviceClass.MOVING,
-        value_fn=lambda d: driving(d.availability.usage_mode) if d.availability else None,
+        value_fn=lambda d: in_use(d.availability),
     ),
     PolestarBinarySensorDescription(
         key="service_required",

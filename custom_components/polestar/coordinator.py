@@ -58,7 +58,7 @@ from .const import (
     STREAM_MIN_RESUBSCRIBE_INTERVAL,
     STREAM_RETRY_DELAY,
 )
-from .utils import command_blocker, driving, local_utc_offset_minutes, poll_is_active
+from .utils import command_blocker, in_use, local_utc_offset_minutes, poll_is_active
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -587,7 +587,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
             return False
         now = time.monotonic()
         availability = data.availability
-        driving_now = bool(availability is not None and driving(availability.usage_mode))
+        driving_now = bool(in_use(availability))
         if self._was_driving and not driving_now:
             self._post_trip_until = now + POST_TRIP_SECONDS
         self._was_driving = driving_now
