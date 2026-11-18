@@ -356,3 +356,14 @@ async def test_other_capability_flags_are_kept_for_diagnostics(monkeypatch):
     caps = vehicle.car_capabilities
     assert caps["supports_driving_journal"] and caps["supports_remote_ota_install_schedule"] and caps["supports_full_ota_updates"]
     assert "supports_update_status" not in caps
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("lock_type", "expected"), [(3, True), (2, False), (1, False), (None, None)])
+async def test_reduced_alarm_lock_support_comes_from_the_car(monkeypatch, lock_type, expected):
+    extra = encode_message(36, encode_int32(1, lock_type) + encode_int32(5, 1)) if lock_type is not None else b""
+    vehicle = _vehicle(monkeypatch, _response(_my_car("VIN0000000000001", "Polestar 2", extra=extra)))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.supports_reduced_alarm_lock is expected

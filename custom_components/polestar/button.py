@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from polestar_api.models.honkflash import HonkFlashAction
+from polestar_api.models.locks import LockAlarmLevel
 
 from .const import DOMAIN
 from .entity import PolestarEntity, async_filter_supported_entities, async_remove_registered_entities
@@ -64,6 +65,14 @@ BUTTONS: tuple[PolestarButtonDescription, ...] = (
         ),
         capability="honk_flash",
         fetch_attr="honk_flash_button",
+    ),
+    PolestarButtonDescription(
+        key="lock_reduced_alarm",
+        fetch_attr="lock_reduced_alarm_button",
+        translation_key="lock_reduced_alarm",
+        icon="mdi:lock-alert",
+        press_fn=lambda button: button.coordinator.async_lock_reduced_alarm(),
+        capability="lock_reduced_alarm",
     ),
     PolestarButtonDescription(
         key="wakeup",

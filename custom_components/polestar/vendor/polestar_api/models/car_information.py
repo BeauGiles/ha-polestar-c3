@@ -55,6 +55,14 @@ class RemoteHonkFlashType(IntEnum):
         return self in (self.HONK_AND_FLASH, self.HONK_AND_OR_FLASH)
 
 
+class RemoteLockType(IntEnum):
+    """The strongest remote lock the car offers."""
+    UNSPECIFIED = 0
+    NONE = 1
+    LOCK = 2
+    LOCK_REDUCED_GUARD = 3
+
+
 class DigitalKeyType(IntEnum):
     UNSPECIFIED = 0
     NONE = 1
@@ -122,11 +130,31 @@ class ParkingClimatizationCapabilities(ProtoMessage, schema={
 
 
 @dataclass(frozen=True)
-class LocksCapabilities(ProtoMessage, schema={5: "supports_window_control", 6: "supports_sunroof_control"}):
+class LocksCapabilities(ProtoMessage, schema={
+    1: "lock_type",
+    5: "supports_window_control",
+    6: "supports_sunroof_control",
+    7: "supports_trunk_control",
+    8: "reports_key_fob_battery_level",
+    9: "remote_lock_unlock_requires_wakeup",
+    10: "supports_trunk_unlock",
+}):
     """What the car supports for locks, windows and roof. A feature the car does not send is not supported."""
 
+    lock_type: RemoteLockType = RemoteLockType.UNSPECIFIED
     supports_window_control: bool = False
     supports_sunroof_control: bool = False
+    supports_trunk_control: bool = False
+    reports_key_fob_battery_level: bool = False
+    remote_lock_unlock_requires_wakeup: bool = False
+    supports_trunk_unlock: bool = False
+
+    @property
+    def supports_reduced_alarm_lock(self) -> bool | None:
+        """True or False when the car says which lock it offers; None when it does not say."""
+        if self.lock_type is RemoteLockType.UNSPECIFIED:
+            return None
+        return self.lock_type is RemoteLockType.LOCK_REDUCED_GUARD
 
 
 @dataclass(frozen=True)

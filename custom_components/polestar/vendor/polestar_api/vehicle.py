@@ -136,6 +136,7 @@ class Vehicle:
         self.supports_charge_locations: bool | None = None
         self.supports_window_control: bool | None = None
         self.supports_sunroof_control: bool | None = None
+        self.supports_reduced_alarm_lock: bool | None = None
         self.supports_target_soc_presets: bool | None = None
         self.reports_avg_consumption: bool | None = None
         self.reports_avg_consumption_auto: bool | None = None
@@ -197,6 +198,7 @@ class Vehicle:
         if car is not None and car.locks is not None:
             self.supports_window_control = bool(car.locks.supports_window_control)
             self.supports_sunroof_control = bool(car.locks.supports_sunroof_control)
+            self.supports_reduced_alarm_lock = car.locks.supports_reduced_alarm_lock
         if car is not None:
             if car.propulsion is not None:
                 if car.propulsion.battery_capacity_kwh > 0:

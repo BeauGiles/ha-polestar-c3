@@ -175,6 +175,9 @@
       "honk_flash": {
         "name": "Honk and flash"
       },
+      "lock_reduced_alarm": {
+        "name": "Lock with reduced alarm"
+      },
       "open_windows": {
         "name": "Open windows"
       },

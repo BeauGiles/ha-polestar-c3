@@ -21,6 +21,7 @@ from polestar_api.exceptions import AuthError, TokenExpiredError, is_unsupported
 from polestar_api.models.availability import Availability
 from polestar_api.models.battery import Battery
 from polestar_api.models.charge_location import ChargeLocation
+from polestar_api.models.locks import LockAlarmLevel
 from polestar_api.models.charging import (
     AmpLimitResponse,
     BatteryChargeTimer,
@@ -117,6 +118,7 @@ _CAPABILITY_FETCHES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("supports_charge_locations", ("charge_locations", "current_charge_location")),
     ("supports_window_control", ("window_control",)),
     ("supports_sunroof_control", ("sunroof",)),
+    ("supports_reduced_alarm_lock", ("lock_reduced_alarm_button",)),
     ("supports_target_soc_presets", ("target_soc_presets",)),
     ("reports_avg_consumption", ("avg_consumption",)),
     ("reports_avg_consumption_auto", ("avg_consumption_auto",)),
@@ -1043,6 +1045,15 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         )
         self._schedule_background_refresh("amp_limit")
         return response
+
+    async def async_lock_reduced_alarm(self) -> None:
+        """Lock the car with the reduced alarm level (the cabin sensors stay off, for example with a pet inside)."""
+        await self.async_run_command(
+            lambda: self.vehicle.lock(alarm_level=LockAlarmLevel.REDUCED),
+            error_message="Lock with reduced alarm failed",
+            capability="lock_reduced_alarm",
+        )
+        self.async_refresh_exterior_after_command()
 
     async def async_start_precleaning(self) -> None:
         """Start air purification (the backend calls it pre-cleaning)."""
