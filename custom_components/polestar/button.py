@@ -39,6 +39,7 @@ BUTTONS: tuple[PolestarButtonDescription, ...] = (
             capability="flash",
         ),
         capability="flash",
+        fetch_attr="flash_button",
     ),
     PolestarButtonDescription(
         key="honk",
@@ -50,6 +51,7 @@ BUTTONS: tuple[PolestarButtonDescription, ...] = (
             capability="honk",
         ),
         capability="honk",
+        fetch_attr="honk_button",
     ),
     PolestarButtonDescription(
         key="honk_flash",
@@ -61,6 +63,7 @@ BUTTONS: tuple[PolestarButtonDescription, ...] = (
             capability="honk_flash",
         ),
         capability="honk_flash",
+        fetch_attr="honk_flash_button",
     ),
     PolestarButtonDescription(
         key="wakeup",

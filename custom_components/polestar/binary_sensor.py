@@ -185,6 +185,7 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
     ),
     PolestarBinarySensorDescription(
         key="light_failure",
+        fetch_attr="light_warnings",
         icon_off="mdi:car-light-alert",
         icon_on="mdi:alert-circle",
         translation_key="light_failure",

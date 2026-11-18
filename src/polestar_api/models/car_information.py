@@ -26,6 +26,35 @@ class DrivetrainType(IntEnum):
     FWD = 3
 
 
+class RemoteHonkFlashType(IntEnum):
+    """What the car can do with the horn and lights from the app."""
+    UNSPECIFIED = 0
+    NONE = 1
+    HONK_AND_FLASH = 2
+    HONK_AND_OR_FLASH = 3
+    FLASH = 4
+    HONK = 5
+
+    @property
+    def can_honk(self) -> bool | None:
+        """True or False when the car says; None when it does not say."""
+        if self is RemoteHonkFlashType.UNSPECIFIED:
+            return None
+        return self in (self.HONK_AND_FLASH, self.HONK_AND_OR_FLASH, self.HONK)
+
+    @property
+    def can_flash(self) -> bool | None:
+        if self is RemoteHonkFlashType.UNSPECIFIED:
+            return None
+        return self in (self.HONK_AND_FLASH, self.HONK_AND_OR_FLASH, self.FLASH)
+
+    @property
+    def can_honk_and_flash(self) -> bool | None:
+        if self is RemoteHonkFlashType.UNSPECIFIED:
+            return None
+        return self in (self.HONK_AND_FLASH, self.HONK_AND_OR_FLASH)
+
+
 class DigitalKeyType(IntEnum):
     UNSPECIFIED = 0
     NONE = 1
@@ -126,9 +155,16 @@ class CarDetails(ProtoMessage, schema={
     7: "model_year",
     9: "consumer_software_version",
     10: "market",
+    16: "honk_flash_type",
     20: "reports_avg_electric_consumption",
     23: "reports_tyre_pressure_warning",
+    26: "supports_driving_journal",
     27: "supports_engine_start",
+    29: "supports_stolen_vehicle_tracking",
+    32: "supports_update_status",
+    33: "supports_remote_ota_install_schedule",
+    57: "supports_full_ota_updates",
+    73: "reports_light_warnings",
     34: "air_purification",
     35: "charging",
     36: "locks",
@@ -165,6 +201,14 @@ class CarDetails(ProtoMessage, schema={
     reports_tyre_pressure_warning: bool = False
     reports_tyre_pressure_in_kpa: bool = False
     reports_service_warning: bool = False
+    honk_flash_type: RemoteHonkFlashType = RemoteHonkFlashType.UNSPECIFIED
+    supports_driving_journal: bool = False
+    supports_stolen_vehicle_tracking: bool = False
+    supports_update_status: bool = False
+    supports_remote_ota_install_schedule: bool = False
+    supports_full_ota_updates: bool = False
+    # The light types the car can warn about, packed as C3 enum numbers. Only "is it empty" matters here.
+    reports_light_warnings: bytes = b""
 
 
 @dataclass(frozen=True)
