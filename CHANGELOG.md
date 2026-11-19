@@ -14,6 +14,7 @@ Dates are 2026. The version in `manifest.json` has not been bumped.
 - **Display names changed**, entity IDs did not.
 - **Climate target temperature and the front seat and steering wheel heating selects are hidden on cars without rear seat settings** (the Polestar 2). The car record has no separate flags for these, so this is a heuristic: a car with front heating but no rear heating would lose them too.
 - The three parking climate timer calendars are in the Configuration category and off by default. Existing installs keep their registry state; disable or enable them in the entity settings.
+- **Why it is called "Polestar C3":** the integration was renamed (11 November) to tell it apart from the web-based GraphQL "Polestar API" integration (`polestar_api`). This one uses the C3 gRPC services that the Polestar app itself uses, which is why it has live streams, command results and the car's capability flags that the GraphQL one cannot offer. Keeping the two names distinct also avoids confusing their entities in Home Assistant.
 - `polestar_api` (the older GraphQL integration) is not needed. Move automations and dashboards to this integration's entities before removing it.
 
 ### Harmonised with Volvo C3
