@@ -87,7 +87,7 @@
         "name": "At charge location"
       },
       "available": {
-        "name": "Available"
+        "name": "Online"
       },
       "brake_fluid_problem": {
         "name": "Brake fluid"
@@ -120,7 +120,7 @@
         "name": "Light status"
       },
       "low_voltage_battery": {
-        "name": "Low-voltage battery"
+        "name": "12V battery"
       },
       "service_required": {
         "name": "Service required"
@@ -129,7 +129,7 @@
         "name": "Tailgate"
       },
       "tank_lid": {
-        "name": "Charging lid"
+        "name": "Charge port"
       },
       "tyre_warning": {
         "name": "Tyre warning"
@@ -197,7 +197,7 @@
         "name": "Climate target temperature"
       },
       "target_soc": {
-        "name": "Target SOC"
+        "name": "Target SoC"
       },
       "timer_target_temperature": {
         "name": "Timer target temperature"
@@ -243,7 +243,7 @@
     },
     "sensor": {
       "air_quality_index": {
-        "name": "Air quality index"
+        "name": "Cabin air quality index"
       },
       "altitude": {
         "name": "Altitude"
@@ -284,7 +284,7 @@
         "name": "Battery Capacity"
       },
       "battery_level": {
-        "name": "Battery level"
+        "name": "State of charge"
       },
       "charge_locations": {
         "name": "Charge locations"
@@ -408,9 +408,6 @@
       "outside_temperature": {
         "name": "Outside temperature"
       },
-      "pm25": {
-        "name": "PM2.5"
-      },
       "range": {
         "name": "Range"
       },
@@ -470,7 +467,7 @@
     },
     "switch": {
       "air_purification": {
-        "name": "Air Purification"
+        "name": "Air purification"
       },
       "charge_timer": {
         "name": "Charging schedule"
