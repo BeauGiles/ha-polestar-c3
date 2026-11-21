@@ -18,7 +18,7 @@ Re-sending a notification with the same `tag` updates the existing activity in p
 
 ### Setup
 
-1. Find your entity prefix, same as the [dashboard cards](example-dashboard-cards) example: look up a real entity such as `sensor.polestar_4_es59205_battery_level`; the prefix (here `polestar_4_es59205`) is what `polestar_VIN` stands for below.
+1. Find your entity prefix: look up a real entity such as `sensor.polestar_4_es59205_battery_level`; the prefix (here `polestar_4_es59205`) is what `polestar_VIN` stands for below.
 2. Find your notify action: **Developer Tools → Actions**, search for `notify.mobile_app`, and use the result for your phone (e.g. `notify.mobile_app_pixel_9` or `notify.mobile_app_iphone`). Call it once per device/person if more than one phone should get the notification.
 3. Paste one of the automations below into **Settings → Automations → ⋮ → Edit in YAML** (new automation), find-and-replace `polestar_VIN` and `notify.mobile_app_YOUR_DEVICE`, and adjust `url` to wherever your own Polestar dashboard lives (or remove the `url` line — it's just the tap target).
 4. Both use `mode: restart` so a new trigger (e.g. the SoC changing) cancels and restarts the in-flight run rather than piling up.
