@@ -4,6 +4,13 @@ All notable changes to Polestar C3 (domain `polestar`), the Home Assistant integ
 
 Dates are 2026.
 
+## Unreleased
+
+### Changed
+
+- **README rewritten** for this project (it was still the upstream library's README), with an unofficial and unsupported warning that points to Polestar's official Data Portal where it is available. The separate integration README is folded into it.
+- Documentation uses GitHub alert boxes (note, tip, important, warning) for the points that matter.
+
 ## 0.4.1 (21 November)
 
 ### Fixed
