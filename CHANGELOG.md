@@ -2,9 +2,9 @@
 
 All notable changes to Polestar C3 (domain `polestar`), the Home Assistant integration in this repository. This integration and [Volvo C3](https://github.com/BeauGiles/ha-volvo-c3) talk to the same Volvo C3 backend and were brought in line with each other on 18 and 19 November 2026, so most entries here have a matching entry in the Volvo changelog.
 
-Dates are 2026. The version in `manifest.json` has not been bumped.
+Dates are 2026.
 
-## Unreleased (18 to 19 November)
+## 0.4.0 (11 to 21 November)
 
 ### Read this before updating
 
