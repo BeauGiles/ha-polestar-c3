@@ -9,6 +9,7 @@ Dates are 2026.
 ### Fixed
 
 - **Creating and editing parking climate timers from the calendar** (`calendar.create_event`, the calendar UI) failed with "start must be a date-time". Home Assistant passes the start under `dtstart` and the integration read `start`. Upstream fix by Martin Leisssoo ([kildahldev/unofficial-polestar-api#41](https://github.com/kildahldev/unofficial-polestar-api/pull/41)), tested on a Polestar 2. Deleting timers was never affected.
+- **Setting the Charging amp limit** now checks the car's delivery status. A refused command (for example car offline) used to look successful. Upstream fix by vladyspavlov ([kildahldev/unofficial-polestar-api#35](https://github.com/kildahldev/unofficial-polestar-api/pull/35)), tested with synthetic replies only, not a real car capture.
 
 ### Changed
 

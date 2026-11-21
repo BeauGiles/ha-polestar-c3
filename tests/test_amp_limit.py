@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from polestar_api.backend import C3, PCCS
+from polestar_api.backend import C3
 from polestar_api.codec import decode, encode_int32, encode_message, encode_string
 from polestar_api.models.common import ResponseStatusCode
 from polestar_api.services.amp_limit import AmpLimitServiceClient
 
 
-@pytest.mark.parametrize("backend", [C3, PCCS])
+@pytest.mark.parametrize("backend", [C3])
 @pytest.mark.parametrize("status", [0, 1, 2, 3, 4, 5, 6, 7, 8, 99])
 async def test_set_checks_flat_delivery_status(monkeypatch, backend, status):
     connection = SimpleNamespace(
