@@ -136,6 +136,8 @@ Download diagnostics from **Settings → Devices & Services → Polestar C3 → 
 
 The code that speaks to Polestar's servers is a Python library in `src/polestar_api`. It is bundled into the integration in `custom_components/polestar/vendor`, so Home Assistant needs no extra install. Run `python scripts/sync_vendor.py` after changing it, and `uv run pytest` for the tests.
 
+The upstream project publishes an [API reference](https://kildahldev.github.io/unofficial-polestar-api/) for the library, with all methods, models and enums. This fork has changed since it was taken (for example, the older PCCS backend was removed), so treat the reference as a guide and check the code in `src/polestar_api` for the details.
+
 A design for sharing this library with Volvo C3 is in the [Volvo C3 repository](https://github.com/BeauGiles/ha-volvo-c3/blob/main/docs/design-shared-c3-library.md).
 
 ## Credits
