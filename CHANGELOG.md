@@ -44,6 +44,7 @@ Dates are 2026.
 - Charge locations are hidden when the car has none saved.
 - The privacy setting is read in the background so its timeout no longer stalls polls.
 - The vendored `polestar_api` library replaces the PyPI dependency.
+- The app version sent to Polestar is now `PolestarApp/5.15.1b9417 Android/14` (was `5.15.0b1118`), matching the current Polestar app.
 
 ### Removed
 
