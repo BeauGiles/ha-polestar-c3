@@ -92,7 +92,6 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 > [!CAUTION]
 > These commands act on a real car. You are responsible for how you use them and for any automations you build on them.
 
-
 ## Entities
 
 | Platform | Examples |
