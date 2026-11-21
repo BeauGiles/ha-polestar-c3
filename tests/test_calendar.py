@@ -75,6 +75,11 @@ def _load_calendar(monkeypatch):
     _stub_module(monkeypatch, "homeassistant.core", HomeAssistant=object)
     _stub_module(monkeypatch, "homeassistant.exceptions", HomeAssistantError=FakeHomeAssistantError)
     _stub_module(monkeypatch, "homeassistant.helpers")
+    _stub_module(
+        monkeypatch,
+        "homeassistant.helpers.entity",
+        EntityCategory=SimpleNamespace(CONFIG="config"),
+    )
     _stub_module(monkeypatch, "homeassistant.helpers.entity_platform", AddEntitiesCallback=object)
     _stub_module(
         monkeypatch,
@@ -89,8 +94,12 @@ def _load_calendar(monkeypatch):
     monkeypatch.setitem(sys.modules, package_name, package)
     _stub_module(monkeypatch, f"{package_name}.const", DOMAIN="polestar")
     _stub_module(monkeypatch, f"{package_name}.coordinator", PolestarCoordinator=FakeCoordinator)
-    _stub_module(monkeypatch, f"{package_name}.entity", PolestarEntity=FakeEntity)
-    _stub_module(monkeypatch, f"{package_name}.utils", serialize_parking_climate_timer=lambda timer: {})
+    _stub_module(monkeypatch, f"{package_name}.entity", PolestarEntity=FakeEntity,
+        async_filter_supported_entities=lambda *args, **kwargs: [],
+    )
+    _stub_module(monkeypatch, f"{package_name}.utils", serialize_parking_climate_timer=lambda timer: {},
+        climate_timer_label=lambda *args, **kwargs: "Departure",
+    )
 
     spec = importlib.util.spec_from_file_location(f"{package_name}.calendar", component_dir / "calendar.py")
     assert spec is not None and spec.loader is not None
