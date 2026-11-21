@@ -13,7 +13,7 @@ The matching integration for Volvo cars is [Volvo C3](https://github.com/BeauGil
 > **Check the official option first.** If you live in Austria, Belgium, Luxembourg, Denmark, Estonia, Finland, France, Germany, Iceland, Ireland, Italy, Latvia, Lithuania, the Netherlands, Norway, Portugal, Spain or Sweden, Polestar offers an official [Data Portal](https://data-portal.polestar.com). Use that if it meets your needs. Use this integration only where it isn't available or doesn't offer what you need.
 
 > [!NOTE]
-> **Why "Polestar C3"?** The name tells this integration apart from the web-based GraphQL "Polestar API" integration (`polestar_api`). This one uses the C3 gRPC services that the Polestar app itself uses, which is why it has live streams, command results and the car's own capability flags. You do not need `polestar_api` alongside it.
+> **Why "Polestar C3"?** The name tells this integration apart from the web-based GraphQL [Polestar API](https://github.com/pypolestar/polestar_api) integration (`polestar_api`). This one uses the C3 gRPC services that the Polestar app itself uses, which is why it has live streams, command results and the car's own capability flags. You do not need `polestar_api` alongside it.
 
 ## Supported cars
 
