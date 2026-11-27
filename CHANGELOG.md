@@ -4,6 +4,12 @@ All notable changes to Polestar C3 (domain `polestar`), the Home Assistant integ
 
 Dates are 2026.
 
+## Unreleased
+
+### Added
+
+- **Engine coolant low** binary sensor (health field 7), matching Volvo C3. Diagnostic, Problem when the car says the level is too low. Hidden on a car that never reports a coolant level.
+
 ## 0.5.0 (27 November)
 
 ### Added
