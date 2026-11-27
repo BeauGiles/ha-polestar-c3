@@ -114,7 +114,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Calendar | Three parking climate timer slots (in the Configuration category and off by default) |
 | Update | Software update |
 
-Entity IDs come from the car model and registration, for example `sensor.polestar_2_abc123_battery_level`. Which entities appear depends on what the car supports.
+Entity IDs come from the device name when the car is first added: the model and the last 6 characters of the VIN, for example `sensor.polestar_2_123456_battery_level`. They never depend on the registration plate, which is shown on the device and the Vehicle info sensor. Which entities appear depends on what the car supports.
 
 ## Install
 

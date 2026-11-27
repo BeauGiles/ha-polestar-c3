@@ -4,7 +4,7 @@
   "codeowners": ["@BeauGiles"],
   "config_flow": true,
   "dependencies": ["http"],
-  "documentation": "https://github.com/BeauGiles/ha-polestar-c3/blob/main/ha_integration_README.md",
+  "documentation": "https://github.com/BeauGiles/ha-polestar-c3",
   "integration_type": "device",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/BeauGiles/ha-polestar-c3/issues",

@@ -1,3 +1,0 @@
-# Package
-
-::: polestar_api
