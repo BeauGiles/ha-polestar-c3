@@ -65,7 +65,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | --- | :---: | :---: |
 | Lock, unlock, lock with reduced alarm | ✅ | ✅ |
 | Boot lock (unlock the tailgate only) | ✅ | ✅ |
-| Open and close tailgate | 🧪 | ✅ |
+| Open and close tailgate | ✅ | ✅ |
 | Flash lights, honk, honk and flash | ✅ | ✅ |
 | Open and close all windows | ✅ | ✅ |
 | Start and stop climate | ✅ | ✅ |
