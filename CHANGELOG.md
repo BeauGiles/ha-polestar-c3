@@ -10,6 +10,7 @@ Dates are 2026.
 
 - **Cold battery** sensor: whether the high-voltage battery is cold, or predicted to be cold, optionally with low charge (battery field 30). Useful for preconditioning in winter. From ericyew ([5ebf781](https://github.com/ericyew/unofficial-polestar-api/commit/5ebf781e15ea2be9229a3f9fee5e4cc9d3fe5158)), found by comparing Polestar app 5.13.0 and 5.15.1. Not yet seen from a real car.
 - **Battery thermal event** binary sensor (safety): a high-voltage battery thermal event reported by the car (health field 48). The car leaves the field out when there is no event, so it reads off. Same source; the Volvo app has the same field and a help screen for it. Not yet seen from a real car.
+- **Open tailgate** and **Close tailgate** buttons for cars with a power tailgate. They use the same command as the Volvo app (`TailgateControl`) and only appear when the car reports power tailgate control (car record, locks field 7); the Polestar 2 reports it. Not yet tried on a Polestar.
 
 ### Fixed
 

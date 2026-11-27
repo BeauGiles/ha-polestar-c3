@@ -155,6 +155,9 @@
       }
     },
     "button": {
+      "close_tailgate": {
+        "name": "Close tailgate"
+      },
       "close_windows": {
         "name": "Close windows"
       },
@@ -169,6 +172,9 @@
       },
       "lock_reduced_alarm": {
         "name": "Lock with reduced alarm"
+      },
+      "open_tailgate": {
+        "name": "Open tailgate"
       },
       "open_windows": {
         "name": "Open windows"
