@@ -1,0 +1,16 @@
+name: Feature request
+description: Something the Polestar app does that Polestar C3 doesn't.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like?
+      description: Where it is in the Polestar app, and what you would use it for in Home Assistant.
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Car model and year
+      placeholder: Polestar 2 2023

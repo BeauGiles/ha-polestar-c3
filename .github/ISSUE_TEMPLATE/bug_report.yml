@@ -1,0 +1,64 @@
+name: Bug report
+description: Something in Polestar C3 doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for reporting. Please don't paste sign-in links, `code=` values, tokens or your VIN.
+  - type: input
+    id: model
+    attributes:
+      label: Car model
+      placeholder: Polestar 2
+    validations:
+      required: true
+  - type: input
+    id: year
+    attributes:
+      label: Model year
+      placeholder: "2023"
+    validations:
+      required: true
+  - type: input
+    id: market
+    attributes:
+      label: Country or market
+      placeholder: Australia
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Polestar C3 version
+      description: Settings → Devices & services → Polestar C3, or HACS.
+      placeholder: "0.5.0"
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.11.3"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: Which entity or command, what it showed or did, and what the Polestar app shows at the same time.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >-
+        Settings → Devices & services → Polestar C3 → ⋮ → Download diagnostics, then drag the file here.
+        It is redacted (no VIN, plate, location or tokens), but have a look before you attach it.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log lines
+      description: Settings → System → Logs, filtered on the integration's name.
+      render: text

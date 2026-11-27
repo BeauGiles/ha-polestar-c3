@@ -1,0 +1,59 @@
+name: Car report
+description: Tell us what works (and what doesn't) on your car, so it can be added to the tested cars list.
+labels: [car report]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Car model
+      placeholder: Polestar 2
+    validations:
+      required: true
+  - type: input
+    id: year
+    attributes:
+      label: Model year
+      placeholder: "2023"
+    validations:
+      required: true
+  - type: input
+    id: market
+    attributes:
+      label: Country or market
+      placeholder: Australia
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Polestar C3 version
+      description: Settings → Devices & services → Polestar C3, or HACS.
+      placeholder: "0.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: overall
+    attributes:
+      label: Overall
+      options:
+        - Everything I tried works
+        - Mostly works, a few problems
+        - Sign-in or setup fails
+    validations:
+      required: true
+  - type: textarea
+    id: works
+    attributes:
+      label: What works
+  - type: textarea
+    id: broken
+    attributes:
+      label: What doesn't work, or shows unknown
+      description: Entities that are wrong, missing, or disabled by the integration but that the Polestar app shows.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >-
+        Settings → Devices & services → Polestar C3 → ⋮ → Download diagnostics, then drag the file here.
+        It is redacted (no VIN, plate, location or tokens), but have a look before you attach it.
