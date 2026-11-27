@@ -39,7 +39,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Saved charge locations, "at charge location" | ✅ | ➖ |
 | Location, with address | ✅ | ✅ |
 | Parked location, altitude, heading, speed | ✅ | ➖ |
-| Doors, windows, hood, boot | ✅ | ✅ |
+| Doors, windows, bonnet, boot | ✅ | ✅ |
 | Sunroof | ➖ | ◐ |
 | Central lock, boot lock | ✅ | ✅ |
 | Alarm triggered, In use, Online, Connection | ✅ | ✅ |
@@ -100,7 +100,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Platform | Examples |
 | --- | --- |
 | Sensor | State of charge, range, charging status, charger connection, Cold battery, climate status, odometer, service sensors, tyre pressures, software version, Connection, Vehicle info, Service plan (only when Polestar has one for the car) |
-| Binary sensor | Online, In use, Plugged in, Alarm triggered, Tyre warning, Service required, 12V battery, Brake fluid, Washer fluid, Light status, Battery thermal event, doors, windows, hood, boot, charge port |
+| Binary sensor | Online, In use, Plugged in, Alarm triggered, Tyre warning, Service required, 12V battery, Brake fluid, Washer fluid, Light status, Battery thermal event, doors, windows, bonnet, boot, charge port |
 | Device tracker | Location, Parked location |
 | Lock | Lock, Boot lock |
 | Switch | Climate, Charging, Charging schedule, Air purification |

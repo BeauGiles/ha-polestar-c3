@@ -21,7 +21,8 @@ Dates are 2026.
 
 ### Changed
 
-- **Boot, not tailgate.** The Tailgate binary sensor is now called **Boot**, matching Boot lock and the Australian wording. Only the name changes; existing entity IDs stay.
+- **Boot and bonnet, not tailgate and hood.** The Tailgate binary sensor is now called **Boot** and Hood is **Bonnet**, matching Boot lock and the Australian (and UK) wording. Only the names change; existing entity IDs stay.
+- **12V battery** and **Brake fluid** move to the Diagnostic section, with Battery thermal event: health warnings that normally read OK.
 - **Connection reads "In use" while the car is being used**, matching the Polestar app, instead of "Offline: car in use". Polestar reports the car unavailable for remote commands while it is driven, so it never really was offline. Other reasons still read "Offline: …". The In use binary sensor is unchanged.
 - The `X-Polestar-Force-Update-Version` header is now `5.15.1`, matching the app version in the user agent (`5.15.1b9417`).
 

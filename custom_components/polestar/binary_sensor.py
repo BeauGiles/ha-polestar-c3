@@ -188,6 +188,7 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         icon_on="mdi:alert-circle",
         translation_key="brake_fluid_problem",
         device_class=BinarySensorDeviceClass.PROBLEM,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: _level_problem(d.health.brake_fluid_level_warning) if d.health else None,
     ),
     PolestarBinarySensorDescription(
@@ -223,6 +224,7 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         icon_on="mdi:battery-alert",
         translation_key="low_voltage_battery",
         device_class=BinarySensorDeviceClass.PROBLEM,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.health.low_voltage_battery_warning == LowVoltageBatteryWarning.TOO_LOW if d.health else None,
     ),
     PolestarBinarySensorDescription(
