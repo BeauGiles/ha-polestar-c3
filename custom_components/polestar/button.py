@@ -48,7 +48,7 @@ BUTTONS: tuple[PolestarButtonDescription, ...] = (
         icon="mdi:bugle",
         press_fn=lambda button: button.coordinator.async_run_command(
             lambda: button._vehicle.honk_flash(action=HonkFlashAction.HONK),
-            error_message="Honk command failed",
+            error_message="Horn command failed",
             capability="honk",
         ),
         capability="honk",
@@ -60,7 +60,7 @@ BUTTONS: tuple[PolestarButtonDescription, ...] = (
         icon="mdi:bugle",
         press_fn=lambda button: button.coordinator.async_run_command(
             lambda: button._vehicle.honk_flash(action=HonkFlashAction.HONK_AND_FLASH),
-            error_message="Honk and flash command failed",
+            error_message="Lights and horn command failed",
             capability="honk_flash",
         ),
         capability="honk_flash",
