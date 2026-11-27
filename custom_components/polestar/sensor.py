@@ -83,6 +83,9 @@ from .utils import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# The service plan rarely changes: read it at startup and then every few days.
+_SERVICE_PLAN_REFRESH = timedelta(days=3)
+
 PARALLEL_UPDATES = 0
 
 
@@ -731,7 +734,7 @@ class PolestarInternetActivationSensor(PolestarEntity, SensorEntity):
 class PolestarServicePlanSensor(PolestarEntity, SensorEntity):
     """The car's service plan (prepaid service contract) from the Polestar app's Service screen.
 
-    Only created when Polestar returns a plan for the car; read when the entry loads and again once a day.
+    Only created when Polestar returns a plan for the car; read when the entry loads and again every 3 days.
     """
 
     _attr_translation_key = "service_plan"
@@ -746,7 +749,7 @@ class PolestarServicePlanSensor(PolestarEntity, SensorEntity):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         if self._api is not None and hasattr(self._api, "async_refresh_service_plan"):
-            self.async_on_remove(async_track_time_interval(self.hass, self._async_refresh, timedelta(days=1)))
+            self.async_on_remove(async_track_time_interval(self.hass, self._async_refresh, _SERVICE_PLAN_REFRESH))
 
     async def _async_refresh(self, _now: Any = None) -> None:
         try:

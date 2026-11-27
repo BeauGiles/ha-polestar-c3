@@ -116,7 +116,7 @@ class PolestarApi:
         vehicle.service_plan = await get_service_plan(token, vehicle.vin)
 
     async def async_refresh_service_plan(self, vehicle: Vehicle) -> None:
-        """Read the car's service plan again (it changes rarely; Home Assistant asks once a day)."""
+        """Read the car's service plan again (it changes rarely; Home Assistant asks every 3 days)."""
         token = await self._auth.ensure_valid_token()
         vehicle.service_plan = await get_service_plan(token, vehicle.vin)
 
