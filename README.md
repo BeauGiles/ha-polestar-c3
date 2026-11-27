@@ -34,11 +34,12 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | State of charge, range | ✅ | ✅ |
 | Charging status, power, current, voltage, charger connection | ✅ | ✅ |
 | Time to full charge | ✅ | ✅ |
-| Time to target charge and to minimum SoC | ✅ | ➖ |
+| Time to target charge and to minimum SoC | ✅ | 🧪 |
 | Charge port (hidden on Polestar 2, XC40 and C40, where it always reads closed), plugged in | ✅ | ✅ |
 | Saved charge locations, "at charge location" | ✅ | ➖ |
 | Location, with address | ✅ | ✅ |
-| Parked location, altitude, heading, speed | ✅ | ➖ |
+| Parked location | ✅ | ➖ |
+| Altitude, heading, speed (the Polestar 2 does not send them) | ◐ | ➖ |
 | Doors, windows, bonnet, boot | ✅ | ✅ |
 | Sunroof | ➖ | ◐ |
 | Central lock, boot lock | ✅ | ✅ |
@@ -53,7 +54,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Battery thermal event (high-voltage battery safety) | 🧪 | 🧪 |
 | Cold battery status | 🧪 | ➖ |
 | Engine coolant, oil level (combustion cars) | ➖ | ◐ |
-| Climate status and time remaining | ✅ | ➖ |
+| Climate status and time remaining | ✅ | 🧪 |
 | Cabin air quality | ✅ | ✅ |
 | Software version | ✅ | ✅ |
 | Driving journal: last trip, trips and distance this month (opt in) | ➖ | ✅ |
@@ -77,7 +78,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Charging schedule: switch, start and end times | ✅ | ✅ |
 | Start and stop charging | ✅ | ✅ |
 | Parking climate timers (calendars) | ✅ | ➖ |
-| Software update: schedule, install, cancel | ✅ | ➖ |
+| Software update: schedule, install, cancel | ✅ | 🧪 |
 | Manage saved charge locations (services) | ✅ | ➖ |
 
 ### Behaviour
