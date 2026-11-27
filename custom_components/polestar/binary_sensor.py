@@ -151,6 +151,7 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         key="available",
         translation_key="available",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.availability.is_available if d.availability else None,
     ),
     PolestarBinarySensorDescription(
@@ -179,6 +180,7 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         icon_on="mdi:alert-circle",
         translation_key="light_failure",
         device_class=BinarySensorDeviceClass.PROBLEM,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.health.any_light_failure if d.health else None,
         attrs_fn=lambda d: light_attributes(d.health) if d.health else {},
     ),

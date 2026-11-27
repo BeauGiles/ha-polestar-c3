@@ -22,7 +22,12 @@ Dates are 2026.
 ### Changed
 
 - **Boot and bonnet, not tailgate and hood.** The Tailgate binary sensor is now called **Boot** and Hood is **Bonnet**, matching Boot lock and the Australian (and UK) wording. Only the names change; existing entity IDs stay.
-- **12V battery** and **Brake fluid** move to the Diagnostic section, with Battery thermal event: health warnings that normally read OK.
+- **Entity sections tidied** (one rule for both integrations: Diagnostic for health warnings that normally read OK, technical details and versions):
+  - to Diagnostic: **12V battery**, **Brake fluid**, **Light status**, **Online** (Connection and In use cover the main view) and **Software version**;
+  - to the main section: **Climate time remaining**, which is useful on a dashboard while the climate runs.
+- **Name casing:** Battery capacity, Internet activation and Vehicle info (were Battery Capacity, Internet Activation, Vehicle Info).
+- **Software update status** (was Software state): the car's over-the-air update progress, with a download icon. "Unknown" now reads **No update** when nothing is downloading or installing; two other states read more clearly.
+- **Software update** uses Home Assistant's standard update icons (a package, with an arrow when an update is available) instead of the Polestar logo.
 - **Connection reads "In use" while the car is being used**, matching the Polestar app, instead of "Offline: car in use". Polestar reports the car unavailable for remote commands while it is driven, so it never really was offline. Other reasons still read "Offline: …". The In use binary sensor is unchanged.
 - The `X-Polestar-Force-Update-Version` header is now `5.15.1`, matching the app version in the user agent (`5.15.1b9417`).
 
