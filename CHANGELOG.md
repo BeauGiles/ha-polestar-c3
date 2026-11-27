@@ -13,6 +13,8 @@ Dates are 2026.
 
 ### Fixed
 
+- **Cold battery is hidden on cars that don't report it.** The Polestar 2 leaves the field empty, so the sensor only ever read Unknown. It is now disabled when the car reports nothing for it, and comes back by itself if the car starts sending it (Polestar 3 and 4 are expected to).
+- **Clearer idle states.** Climate request type and Climate running status show "Not running" instead of "Undefined". Unavailable reason shows "Not applicable" while the car is available, instead of Unknown. The state values (`undefined`, `none`) are what automations see.
 - **Streamed values survive a full poll.** If a poll endpoint is unsupported for a value that a live stream delivers (for example an odometer that only arrives by stream), the poll used to clear it. The streamed value is now kept, and the poll result is built on the current data so nothing it did not fetch is reset. Port of ericyew's [0da9bc1](https://github.com/ericyew/unofficial-polestar-api/commit/0da9bc1b692d86bf5f115464cd1ed80f2829f6eb); on this fork it only mattered for cars whose poll endpoint is unsupported.
 
 ### Changed
