@@ -408,7 +408,6 @@ def last_seen(data: Any) -> datetime | None:
 _SHORT_REASON = {
     "NO_INTERNET": "no internet",
     "POWER_SAVING_MODE": "power saving",
-    "CAR_IN_USE": "car in use",
     "OTA_INSTALLATION_IN_PROGRESS": "updating",
     "STOLEN_VEHICLE_TRACKING_IN_PROGRESS": "tracking",
     "SERVICE_MODE_ACTIVE": "service mode",
@@ -416,7 +415,9 @@ _SHORT_REASON = {
 
 
 def connection_text(data: Any) -> str:
-    """Short state of the Connection sensor: "Online", "Offline: car in use" or "Unknown".
+    """Short state of the Connection sensor: "Online", "In use", "Offline: no internet" or "Unknown".
+
+    "In use" matches the Polestar app: Polestar reports the car unavailable because it is being used.
 
     Short and free of clock times so the history stays quiet; the explanation and the time are attributes
     (``connection_attributes``) and the Last seen sensor.
@@ -426,6 +427,8 @@ def connection_text(data: Any) -> str:
         return "Unknown"
     if availability.is_available:
         return "Online"
+    if _reason_key(availability) == "CAR_IN_USE":
+        return "In use"
     return f"Offline: {_SHORT_REASON.get(_reason_key(availability), 'no connection')}"
 
 

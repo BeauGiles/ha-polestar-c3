@@ -19,6 +19,7 @@ Dates are 2026.
 
 ### Changed
 
+- **Connection reads "In use" while the car is being used**, matching the Polestar app, instead of "Offline: car in use". Polestar reports the car unavailable for remote commands while it is driven, so it never really was offline. Other reasons still read "Offline: …". The In use binary sensor is unchanged.
 - The `X-Polestar-Force-Update-Version` header is now `5.15.1`, matching the app version in the user agent (`5.15.1b9417`).
 
 ## 0.4.3 (27 November)
