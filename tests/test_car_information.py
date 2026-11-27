@@ -367,3 +367,22 @@ async def test_reduced_alarm_lock_support_comes_from_the_car(monkeypatch, lock_t
     await vehicle.async_load_car_information()
 
     assert vehicle.supports_reduced_alarm_lock is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("locks", "control", "unlock"),
+    [
+        (encode_int32(7, 1) + encode_int32(10, 1), True, True),
+        (encode_int32(5, 1), False, False),
+        (None, None, None),
+    ],
+)
+async def test_tailgate_support_comes_from_the_car(monkeypatch, locks, control, unlock):
+    extra = encode_message(36, locks) if locks is not None else b""
+    vehicle = _vehicle(monkeypatch, _response(_my_car("VIN0000000000001", "Polestar 2", extra=extra)))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.supports_tailgate_control is control
+    assert vehicle.supports_tailgate_unlock is unlock
