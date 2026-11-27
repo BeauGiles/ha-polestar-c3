@@ -131,9 +131,6 @@ class Vehicle:
         self.supports_honk: bool | None = None
         self.supports_flash: bool | None = None
         self.supports_honk_and_flash: bool | None = None
-        # Power tailgate open/close, and remote tailgate unlock (None until the car record has been read).
-        self.supports_tailgate_control: bool | None = None
-        self.supports_tailgate_unlock: bool | None = None
         self.reports_light_warnings: bool | None = None
         self.car_capabilities: dict = {}
         self.supports_charge_locations: bool | None = None
@@ -202,8 +199,6 @@ class Vehicle:
             self.supports_window_control = bool(car.locks.supports_window_control)
             self.supports_sunroof_control = bool(car.locks.supports_sunroof_control)
             self.supports_reduced_alarm_lock = car.locks.supports_reduced_alarm_lock
-            self.supports_tailgate_control = bool(car.locks.supports_trunk_control)
-            self.supports_tailgate_unlock = bool(car.locks.supports_trunk_unlock)
         if car is not None:
             if car.propulsion is not None:
                 if car.propulsion.battery_capacity_kwh > 0:

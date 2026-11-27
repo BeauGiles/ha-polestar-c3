@@ -750,8 +750,6 @@ class PolestarVehicleInfoSensor(PolestarEntity, SensorEntity):
             "digital_key_type": v.digital_key_type,
             "has_performance_software_upgrade": v.has_performance_software_upgrade,
             "supports_engine_start": v.supports_engine_start,
-            "supports_tailgate_control": getattr(v, "supports_tailgate_control", None),
-            "supports_tailgate_unlock": getattr(v, "supports_tailgate_unlock", None),
             **flatten_attributes(
                 {
                     "app": {
