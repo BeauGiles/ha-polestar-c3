@@ -46,6 +46,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Odometer, trip meters, average consumption, average speed | ✅ | ✅ (average speed hidden on the Polestar 2) |
 | Outside temperature | ✅ | ✅ |
 | Service required (with urgency), days, distance and engine hours to service | ✅ | ✅ |
+| Service plan (prepaid service contract: products, end dates, mileage limits) | ➖ | 🧪 |
 | Tyre warning, per-wheel grades | ◐ | ◐ |
 | Per-wheel tyre pressures | ◐ | ◐ |
 | 12V battery, brake fluid, washer fluid, light status | ✅ | ✅ |
@@ -98,7 +99,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 
 | Platform | Examples |
 | --- | --- |
-| Sensor | State of charge, range, charging status, charger connection, Cold battery, climate status, odometer, service sensors, tyre pressures, software version, Connection, Vehicle info |
+| Sensor | State of charge, range, charging status, charger connection, Cold battery, climate status, odometer, service sensors, tyre pressures, software version, Connection, Vehicle info, Service plan (only when Polestar has one for the car) |
 | Binary sensor | Online, In use, Plugged in, Alarm triggered, Tyre warning, Service required, 12V battery, Brake fluid, Washer fluid, Light status, Battery thermal event, doors, windows, hood, tailgate, charge port |
 | Device tracker | Location, Parked location |
 | Lock | Lock, Boot lock |
