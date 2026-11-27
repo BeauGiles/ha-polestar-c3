@@ -13,6 +13,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from polestar_api.models.exterior import OpenStatus
@@ -230,6 +231,7 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         icon_on="mdi:fire-alert",
         translation_key="battery_thermal_event",
         device_class=BinarySensorDeviceClass.SAFETY,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.health.battery_thermal_event_triggered if d.health else None,
     ),
     PolestarBinarySensorDescription(
