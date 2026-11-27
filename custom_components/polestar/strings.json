@@ -130,7 +130,7 @@
         "name": "Service required"
       },
       "tailgate": {
-        "name": "Tailgate"
+        "name": "Boot"
       },
       "tank_lid": {
         "name": "Charge port"
@@ -156,7 +156,7 @@
     },
     "button": {
       "close_tailgate": {
-        "name": "Close tailgate"
+        "name": "Close boot"
       },
       "close_windows": {
         "name": "Close windows"
@@ -174,7 +174,7 @@
         "name": "Lock with reduced alarm"
       },
       "open_tailgate": {
-        "name": "Open tailgate"
+        "name": "Open boot"
       },
       "open_windows": {
         "name": "Open windows"
