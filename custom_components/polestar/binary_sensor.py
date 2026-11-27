@@ -196,6 +196,18 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         value_fn=lambda d: _level_problem(d.health.brake_fluid_level_warning) if d.health else None,
     ),
     PolestarBinarySensorDescription(
+        key="engine_coolant_problem",
+        # Health field 7, as on Volvo C3 ("Engine coolant low"). Hidden when the car never reports a level.
+        required_data=lambda d: d.health is None
+        or d.health.engine_coolant_level_warning.name != "UNSPECIFIED",
+        icon_off="mdi:coolant-temperature",
+        icon_on="mdi:alert-circle",
+        translation_key="engine_coolant_problem",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: _level_problem(d.health.engine_coolant_level_warning) if d.health else None,
+    ),
+    PolestarBinarySensorDescription(
         key="washer_fluid_problem",
         # Hidden when the car answers the health request but never reports a washer fluid level.
         required_data=lambda d: d.health is None

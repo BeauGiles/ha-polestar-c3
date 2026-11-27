@@ -90,6 +90,9 @@
       "available": {
         "name": "Online"
       },
+      "battery_thermal_event": {
+        "name": "Battery thermal event"
+      },
       "brake_fluid_problem": {
         "name": "Brake fluid"
       },
@@ -108,6 +111,9 @@
       "door_rear_right": {
         "name": "Rear right door"
       },
+      "engine_coolant_problem": {
+        "name": "Engine coolant low"
+      },
       "hood": {
         "name": "Bonnet"
       },
@@ -122,9 +128,6 @@
       },
       "low_voltage_battery": {
         "name": "12V battery"
-      },
-      "battery_thermal_event": {
-        "name": "Battery thermal event"
       },
       "service_required": {
         "name": "Service required"
