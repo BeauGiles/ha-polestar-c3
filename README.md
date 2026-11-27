@@ -66,7 +66,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Lock, unlock, lock with reduced alarm | ✅ | ✅ |
 | Boot lock (unlock the boot only) | ✅ | ✅ |
 | Open and close boot (power tailgate) | ✅ | ✅ |
-| Flash lights, honk, lights and horn | ✅ | ✅ |
+| Flash lights, horn, lights and horn | ✅ | ✅ |
 | Open and close all windows | ✅ | ✅ |
 | Start and stop climate | ✅ | ✅ |
 | Climate target temperature | ◐ | ◐ |
@@ -106,7 +106,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Switch | Climate, Charging, Charging schedule, Air purification |
 | Number | Target SoC, Charging amp limit, Climate target temperature, Timer target temperature |
 | Select | Seat and steering wheel heating, Target SoC mode, timer heating and battery preconditioning |
-| Button | Flash lights, Honk, Lights and horn, Lock with reduced alarm, Open and Close windows, Open and Close boot, Refresh |
+| Button | Flash lights, Horn, Lights and horn, Lock with reduced alarm, Open and Close windows, Open and Close boot, Refresh |
 | Time | Charging schedule start and end |
 | Calendar | Three parking climate timer slots (in the Configuration category and off by default) |
 | Update | Software update |

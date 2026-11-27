@@ -23,7 +23,7 @@ Dates are 2026.
 ### Changed
 
 - **Charge port hidden on the Polestar 2.** Its charge port status stays closed even with a cable in (as on the electric Volvo XC40 and C40, the same CMA platform), so the sensor is disabled. It is decided from the model, as no capability flag covers it; you can still enable it.
-- **Honk and flash is now Lights and horn**, as the Polestar app calls it. The entity ID is unchanged.
+- **Honk and flash is now Lights and horn, and Honk is now Horn**, as the Polestar app calls them (Flash lights already matched). The entity IDs are unchanged.
 - **Boot and bonnet, not tailgate and hood.** The Tailgate binary sensor is now called **Boot** and Hood is **Bonnet**, matching Boot lock and the Australian (and UK) wording. Only the names change; existing entity IDs stay.
 - **Entity sections tidied** (one rule for both integrations: Diagnostic for health warnings that normally read OK, technical details and versions):
   - to Diagnostic: **12V battery**, **Brake fluid**, **Light status**, **Online** (Connection and In use cover the main view) and **Software version**;
