@@ -120,6 +120,12 @@ Entity IDs come from the device name when the car is first added: the model and 
 
 Requires [HACS](https://hacs.xyz/) on your Home Assistant instance.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=BeauGiles&repository=ha-polestar-c3&category=integration)
+
+Click the badge above to add this repo to HACS in one click, then download **Polestar C3** and restart Home Assistant.
+
+Manual steps if the badge doesn't work:
+
 1. In HACS, open **⋮ → Custom repositories**.
 2. Add `https://github.com/BeauGiles/ha-polestar-c3` with category **Integration**.
 3. Find **Polestar C3** in HACS and click **Download**.
@@ -177,11 +183,28 @@ It uses the same start and stop override calls as the Polestar app, which only o
 **Setup or reauth says Polestar wants this account to finish a step first.**
 Since late November 2026 some Polestar ID accounts are asked for one more step after the password, usually a one-time code sent by text message to verify the phone number. It happens once per account. Home Assistant can't enter the code, so sign in once at [polestar.com](https://www.polestar.com) or in the Polestar app with the same account, enter the code there, then try again in Home Assistant. Accepting new terms works the same way. Until then, the integration stops signing in on its own, so it won't keep sending you codes.
 
-**An entity is missing.**
-The integration hides entities for features the car says it doesn't have (for example tyre pressures on a car without TPMS, or the climate settings on a car without rear seat settings). The Polestar 2 does not send average speed.
+**Which cars have been tested?**
+
+| Car | Market | Reported by | Notes |
+| --- | --- | --- | --- |
+| Polestar 2 | Australia | maintainer | Everything in the tables above except where marked ➖ or ◐. No average speed, cold battery status, altitude, heading or speed |
+
+Polestar 3 and 4 use the same platform and should work; several of the fixes taken from upstream were checked on a Polestar 4. [Open an issue](https://github.com/BeauGiles/ha-polestar-c3/issues/new/choose) with **Car report** to add yours.
+
+**An entity is missing, or says "Disabled by integration".**
+The integration hides entities for features the car says it doesn't have, or that it never sends data for (for example tyre pressures on a car without TPMS, or the climate settings on a car without rear seat settings). The Polestar 2 sends no average speed and no cold battery status. These are disabled, not deleted, and come back by themselves if the car starts sending the data.
+
+**Does this wake the car or drain the 12V battery?**
+No. Streaming and polling read what Polestar's cloud already has; the car sends updates when it chooses. Only commands (lock, climate, charging and so on) reach the car itself.
+
+**How can I tell AC from DC charging?**
+The **Charging type** sensor reads None, AC, DC or Wireless. **Charger power status** says whether the charger is supplying power.
+
+**Can I use this alongside another Polestar integration?**
+Yes. Other Polestar integrations, such as [pypolestar's `polestar_api`](https://github.com/pypolestar/polestar_api), use a different domain, so both can be set up at once. Each one signs in to Polestar ID on its own, so giving each its own account (a secondary account with access to the car) keeps them from getting in each other's way. There is no official Polestar integration in Home Assistant.
 
 **Something stopped working.**
-Download diagnostics from **Settings → Devices & Services → Polestar C3 → ⋮ → Download diagnostics**. It is redacted (no VIN, email or GPS) and includes stream health and a count of API calls per endpoint. Attach it to an issue.
+Download diagnostics from **Settings → Devices & Services → Polestar C3 → ⋮ → Download diagnostics**. It is redacted (no VIN, email, password, registration plate or GPS) and includes stream health and a count of API calls per endpoint. Attach it to an issue.
 
 ## For developers
 
