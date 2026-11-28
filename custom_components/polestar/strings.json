@@ -255,6 +255,9 @@
       }
     },
     "sensor": {
+      "air_purification_last_cycle": {
+        "name": "Air purification last cycle"
+      },
       "air_quality_index": {
         "name": "Cabin air quality index"
       },

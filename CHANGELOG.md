@@ -8,10 +8,12 @@ Dates are 2026.
 
 ### Added
 
+- **Air purification last cycle.** A diagnostic timestamp sensor shows when the last air purification cycle finished, as Volvo C3 already does. It comes from the pre-cleaning reply the integration already reads.
 - **Diagnostics show what the car lets the app set for parking climate.** These are the car record's flags for front seat, rear seat and steering wheel settings, the number of heat levels for each, and the steering wheel level count the select uses. The field numbers come from the Volvo app's proto: 8, 9, 10, 11, 15 and 16. Nothing changes in which entities appear. The Polestar 2 still has no climate seat, steering wheel or temperature settings, which matches the Polestar app, where it can only set these in the car.
 
 ### Fixed
 
+- **The charge current slider follows the car's own range.** The car record says which currents the car accepts: 6–32 A on an Australian Polestar 2, up to 48 A in North America. The slider was fixed at 6–32 A. The charge location actions now accept up to 80 A and check the value against the car's maximum.
 - **Average speed sensors come back.** Polestar removed the dashboard service the average speeds came from (it now answers "Method not found"), so both sensors stayed hidden. The odometer reply carries the same two values (fields 5 and 6), and the sensors now fall back to it.
 - **Reading the remote data-sharing setting no longer times out.** It's a stream in the app, but the library read it as a single reply and waited for a close that never comes. It now takes the first message. No entity uses it today; this is the library getter only.
 - **Start charging and Stop charging report the car's answer correctly.** The reply carries its status in field 1, but the integration looked for it inside a field-3 envelope, so it read every reply as undefined and the command could show as failed even when the car accepted it. Only SUCCESS now counts as success; a validation, internal or not-found error is reported as a failure. From ericyew ([67952fd](https://github.com/ericyew/unofficial-polestar-api/commit/67952fdf5d5bf453d52fc3a7a992b613c288598b)), originally upstream v0.4.0.

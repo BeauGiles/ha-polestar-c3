@@ -112,7 +112,7 @@ create_charge_location:
       selector:
         number:
           min: 0
-          max: 32
+          max: 80
           step: 1
     minimum_soc:
       selector:
@@ -145,7 +145,7 @@ update_charge_location:
       selector:
         number:
           min: 0
-          max: 32
+          max: 80
           step: 1
     minimum_soc:
       selector:

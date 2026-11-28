@@ -309,6 +309,18 @@ class TestOdometerStatus:
         assert odo.average_speed_km_per_hour_automatic == 40
 
 
+class TestPreCleaningLastCycle:
+    def test_last_cycle_completed_is_read(self):
+        # A Polestar 2 pre-cleaning reply (28 Nov 2026): field 2 is when the last cycle finished.
+        from polestar_api.codec import encode, encode_message
+        from polestar_api.models.precleaning import PreCleaningInfo
+
+        data = encode_message(2, encode({"s": (1, "int64")}, {"s": 1795844582})) + encode({"v": (8, "bool")}, {"v": True})
+        info = PreCleaningInfo.from_bytes(data)
+        assert info.last_cycle_completed.seconds == 1795844582
+        assert info.last_cycle_valid is True
+
+
 # -- WakeUp --
 
 
