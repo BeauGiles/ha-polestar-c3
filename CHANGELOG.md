@@ -6,6 +6,16 @@ Dates are 2026.
 
 ## Unreleased
 
+## 0.6.2 (28 November)
+
+### Fixed
+
+- **A refused command says "in use" plainly.** While the car is being driven, a command now fails with "The car is in use, so it can't take commands", instead of calling the car offline or repeating "in use" twice. A car that really is offline gets "The car has been offline since 20:18 (…)". Matches Volvo C3.
+
+### Changed
+
+- **The options dialog matches Volvo C3.** It's now titled Polestar C3 options, with Idle and Active poll interval labels, the default and range under each, and a note that polling reads Polestar's cloud copy of the car, so it doesn't wake the car. The old warning about 12V battery use is gone. Only the wording changed: your settings are kept.
+
 ## 0.6.1 (28 November)
 
 ### Changed

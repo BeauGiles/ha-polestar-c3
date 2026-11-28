@@ -245,8 +245,9 @@ def test_commands_are_only_refused_when_they_cannot_reach_the_car(utils):
     assert utils.command_blocker(_data(False, "UNSPECIFIED"), fmt) is None  # no reason: let it through
     assert utils.command_blocker(type("D", (), {"availability": None})(), fmt) is None
     blocked = utils.command_blocker(_data(False, "NO_INTERNET"), fmt)
-    assert "offline since 19:32" in blocked and "Nothing was sent" in blocked
-    assert "in use" in utils.command_blocker(_data(False, "CAR_IN_USE"), fmt)
+    assert "has been offline since 19:32" in blocked and "Nothing was sent" in blocked
+    in_use = utils.command_blocker(_data(False, "CAR_IN_USE"), fmt)
+    assert in_use.startswith("The car is in use,") and in_use.count("in use") == 1
     assert utils.command_blocker(_data(False, "OTA_INSTALLATION_IN_PROGRESS"), fmt)
 
 

@@ -516,10 +516,11 @@ def command_blocker(data: Any, local_time: Any) -> str | None:
     key = _reason_key(availability)
     if key not in _COMMAND_BLOCKING_REASONS:
         return None
+    if key == "CAR_IN_USE":
+        return "The car is in use, so it can't take commands. Nothing was sent. Try again once it's parked."
     seen = last_seen(data)
     when = f" since {local_time(seen)}" if seen is not None else ""
-    state = "in use" if key == "CAR_IN_USE" else f"offline{when}"
-    return f"The car is {state} ({_REASON_TEXT[key]}). Nothing was sent. Try again when it is available."
+    return f"The car has been offline{when} ({_REASON_TEXT[key]}). Nothing was sent. Try again when it is available."
 
 
 def connection_attributes(data: Any) -> dict[str, Any]:
