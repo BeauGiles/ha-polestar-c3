@@ -134,4 +134,41 @@ class ProtoMessage:
                 except ValueError:
                     val = py_type(0)
             kwargs[name] = val
-        return cls(**kwargs)
+        msg = cls(**kwargs)
+        # Fields the schema doesn't know (codec.decode keys them by number). Kept so diagnostics can show fields
+        # Polestar adds before anyone maps them; not part of equality or the dataclass fields.
+        unknown = {num: val for num, val in raw.items() if isinstance(num, int)}
+        if unknown:
+            object.__setattr__(msg, "_unknown", unknown)
+        return msg
+
+
+def unknown_fields(msg: object) -> dict[str, object]:
+    """A message's fields its schema doesn't name, as ``{"unknown_<n>": value}`` with a best guess at each value."""
+    raw = getattr(msg, "_unknown", None) or {}
+    return {f"unknown_{num}": describe_raw(val) for num, val in sorted(raw.items())}
+
+
+def describe_raw(value: object, depth: int = 0) -> object:
+    """Best guess for a raw protobuf value with no schema: a nested message, text, a number or hex."""
+    if isinstance(value, list):
+        return [describe_raw(v, depth) for v in value]
+    if not isinstance(value, (bytes, bytearray)):
+        return value
+    data = bytes(value)
+    if not data:
+        return ""
+    try:
+        text = data.decode("utf-8")
+        if text.isprintable():
+            return text
+    except UnicodeDecodeError:
+        pass
+    if depth < 8:
+        try:
+            nested = codec.decode(data)
+            if nested:
+                return {f"unknown_{k}": describe_raw(v, depth + 1) for k, v in sorted(nested.items())}
+        except (ValueError, IndexError, Exception):  # noqa: BLE001 - not a message: fall through to hex
+            pass
+    return "hex:" + data.hex()

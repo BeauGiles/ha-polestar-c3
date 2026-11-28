@@ -480,3 +480,40 @@ async def test_parking_climate_capabilities_are_kept_for_diagnostics(monkeypatch
     assert caps.supports_rear_seats_settings is False
     assert caps.front_seats_setting_levels == 3
     assert caps.steering_wheel_setting_levels == 1
+
+
+@pytest.mark.asyncio
+async def test_type_code_and_software_install_time_are_read(monkeypatch):
+    # An XC40's car record (28 Nov 2026): type code 536, field 92 = {1: seconds} about 47 s after its last OTA.
+    flat = encode(
+        {"code": (5, "string")}, {"code": "536"}
+    ) + encode_message(92, encode_int32(1, 1791102281))
+    vehicle = _vehicle(monkeypatch, _response(_capable_car(flat=flat)))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.vehicle_type_code == "536"
+    assert vehicle.software_installed_at == 1791102281
+    assert vehicle.car_record is not None
+
+
+@pytest.mark.asyncio
+async def test_no_install_time_before_a_cars_first_ota(monkeypatch):
+    vehicle = _vehicle(monkeypatch, _response(_capable_car()))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.software_installed_at is None
+
+
+@pytest.mark.asyncio
+async def test_fields_nothing_names_are_kept_for_diagnostics(monkeypatch):
+    from polestar_api.wire import unknown_fields
+
+    charging = encode({"a": (43, "int32"), "b": (44, "int32"), "max": (16, "int32")}, {"a": 3, "b": 1, "max": 20})
+    vehicle = _vehicle(monkeypatch, _response(_capable_car(charging=charging)))
+
+    await vehicle.async_load_car_information()
+
+    assert unknown_fields(vehicle.car_record.car.charging) == {"unknown_43": 3, "unknown_44": 1}
+    assert "unknown_43" not in repr(vehicle.car_capabilities)  # the Vehicle info attributes stay as they were

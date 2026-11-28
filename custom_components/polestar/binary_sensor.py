@@ -150,6 +150,18 @@ BINARY_SENSORS: tuple[PolestarBinarySensorDescription, ...] = (
         value_fn=lambda d: _is_open(d.exterior.tank_lid.open_status),
     ),
     PolestarBinarySensorDescription(
+        key="charge_now",
+        fetch_attr="charge_now",
+        translation_key="charge_now",
+        icon="mdi:ev-station",
+        value_fn=lambda d: d.charge_now.state.is_active if d.charge_now else None,
+        attrs_fn=lambda d: {
+            "state": d.charge_now.state.name.lower(),
+            # Which charge-now button the app offers now: charge_now, resume_schedule or not_applicable.
+            "app_offers": d.charge_now.enabled_action.name.lower(),
+        } if d.charge_now else {},
+    ),
+    PolestarBinarySensorDescription(
         key="available",
         translation_key="available",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,

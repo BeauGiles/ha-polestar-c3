@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
 from typing import TYPE_CHECKING
@@ -10,6 +11,7 @@ from .models.availability import Availability
 from .naming import model_from_slug
 from .models.battery import Battery
 from .models.charge_location import ChargeLocation
+from .models.chronos_errors import ChargeNowState, ChronosErrors
 from .models.consent import PrivacySetting, PrivacySettingDetail, RemoteFunctionDataSharing
 from .models.ota import CarSoftwareInfo, Scheduler
 from .models.parking_climate_timer import ParkingClimateTimer, ParkingClimateTimerSettings
@@ -41,6 +43,7 @@ from .services.battery import BatteryServiceClient
 from .services.car_information import CarInformationServiceClient
 from .services.charge_location import ChargeLocationServiceClient
 from .services.charge_now import ChargeNowServiceClient
+from .services.errors import ErrorServiceClient
 from .services.charge_timer import ChargeTimerServiceClient
 from .services.climate import ClimateServiceClient
 from .services.consent import ConsentServiceClient
@@ -165,6 +168,12 @@ class Vehicle:
         self.supports_rear_seat_heating: bool | None = None
         self.max_climate_timers: int | None = None
         self.steering_wheel_heat_levels: int | None = None
+        # The car's type code from the car record ("534" = Polestar 2, "536" = XC40 / EX40). None until it's read.
+        self.vehicle_type_code: str | None = None
+        # When the current software was installed (car record field 92, epoch seconds). None when the car doesn't say.
+        self.software_installed_at: int | None = None
+        # The whole car record as last read, for diagnostics (the integration redacts identifiers).
+        self.car_record: object | None = None
         # The car record's parking climate block as received, for diagnostics.
         self.parking_climate_capabilities: ParkingClimatizationCapabilities | None = None
 
@@ -174,6 +183,7 @@ class Vehicle:
         self._car_information = CarInformationServiceClient(connection, vin)
         self._charge_location = ChargeLocationServiceClient(connection, vin)
         self._charge_now = ChargeNowServiceClient(connection, vin)
+        self._errors = ErrorServiceClient(connection, vin)
         self._charge_timer = ChargeTimerServiceClient(connection, vin)
         self._climate = ClimateServiceClient(connection, vin)
         self._consent = ConsentServiceClient(connection, vin)
@@ -205,6 +215,7 @@ class Vehicle:
             return
         if my_car is None:
             return
+        self.car_record = my_car
         car = my_car.car
         if car is not None and car.charging is not None:
             self.supports_charge_locations = car.charging.max_number_of_locations > 0
@@ -254,6 +265,9 @@ class Vehicle:
             self.supports_honk_and_flash = car.honk_flash_type.can_honk_and_flash
             self.reports_light_warnings = bool(car.reports_light_warnings)
             self.car_capabilities = _non_default_fields(car)
+            self.vehicle_type_code = car.vehicle_type_code or None
+            installed = car.software_installed_at
+            self.software_installed_at = installed.seconds if installed is not None and installed.seconds > 0 else None
             self.installed_software_version = car.consumer_software_version or None
             self.model_name = self.model_name or car.vehicle_type_name or model_from_slug(self.slug) or None
             if self.model_year is None and car.model_year.isdigit():
@@ -464,6 +478,38 @@ class Vehicle:
         return await self._invocation.tailgate_control(TailgateControlType.CLOSE)
 
     # -- Charge Now --
+
+    async def read_raw(self, method: str, request: bytes, *, stream: bool = False, timeout: float = 10.0) -> bytes | None:
+        """One raw reply from a read-only method, for diagnostics. Only Get, Stream and is methods are allowed.
+
+        A server stream gives its first message. None when nothing arrives within ``timeout`` seconds.
+        """
+        name = method.rsplit("/", 1)[-1]
+        if not name.startswith(("Get", "Stream", "is")):
+            raise ValueError(f"{method} is not a read")
+        from . import grpc as grpc_call  # noqa: PLC0415
+
+        connection = self._car_information._connection
+        metadata = await connection.get_metadata(self.vin)
+        metadata["vin"] = self.vin
+        try:
+            async with asyncio.timeout(timeout):
+                if not stream:
+                    return await grpc_call.unary_unary(connection.channel, method, request, metadata=metadata, retries=0)
+                async for data in grpc_call.unary_stream(connection.channel, method, request, metadata=metadata, retries=0):
+                    return data
+        except TimeoutError:
+            return None
+        return None
+
+    async def get_charge_now_state(self) -> ChargeNowState | None:
+        """Whether charge now is overriding the charge timer, and which charge-now button the app offers."""
+        return await self._charge_now.get_state()
+
+    async def stream_charging_errors(self) -> AsyncIterator[ChronosErrors]:
+        """Charging and climate timer changes the car couldn't apply, as they happen (silent otherwise)."""
+        async for errors in self._errors.stream():
+            yield errors
 
     async def start_charging(self) -> int:
         """Start charging immediately."""

@@ -90,6 +90,9 @@
       "available": {
         "name": "Online"
       },
+      "charge_now": {
+        "name": "Charge now"
+      },
       "battery_thermal_event": {
         "name": "Battery thermal event"
       },
@@ -255,6 +258,9 @@
       }
     },
     "sensor": {
+      "charging_error": {
+        "name": "Last charging error"
+      },
       "air_purification_last_cycle": {
         "name": "Air purification last cycle"
       },
