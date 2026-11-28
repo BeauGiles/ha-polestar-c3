@@ -185,6 +185,9 @@ def decode(data, schema=None):
                 pass  # caller decodes nested messages
             elif field_type == "bool" and isinstance(value, int):
                 value = bool(value)
+            elif field_type in ("int32", "int64") and isinstance(value, int) and value >= 1 << 63:
+                # Negative int32/int64 values are sent as 10-byte two's complement varints.
+                value -= 1 << 64
 
             # Handle repeated fields
             if name in result:

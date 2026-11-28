@@ -61,7 +61,7 @@ def test_air_purification_capability_decodes_and_is_absent_without_the_plus_pack
 
 
 def test_car_facts_decode():
-    # As a Polestar 2 sends them (28 Nov 2026): 2600 kg, left-hand drive, pilot assist, DC inlet on the left,
+    # Field values as a Polestar 2 sends them (28 Nov 2026): 2600 kg, pilot assist, DC inlet on the left,
     # electric parking heating and cooling, climate runs of up to 30 minutes.
     from polestar_api.models.car_information import (
         DriverSide,
@@ -88,3 +88,12 @@ def test_car_facts_decode():
     from polestar_api.wire import unknown_fields
 
     assert not unknown_fields(car)
+
+
+def test_negative_int_decodes_as_negative():
+    # The OTA scheduler sends relative_time -2 (nothing scheduled) as a 10-byte varint.
+    from polestar_api.models.ota import Scheduler
+
+    scheduler = Scheduler.from_bytes(_field(2, 0, _varint((1 << 64) - 2)))
+    assert scheduler.relative_time == -2
+    assert Scheduler.from_bytes(scheduler.to_bytes()).relative_time == -2

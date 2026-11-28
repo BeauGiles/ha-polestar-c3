@@ -53,6 +53,9 @@ def _serialize(value: Any) -> Any:
         return value.name
     if isinstance(value, datetime):
         return value.isoformat()
+    if isinstance(value, (bytes, bytearray)):
+        # Packed lists (such as the light warnings the car reports) as numbers, not a Python bytes repr.
+        return list(value)
     if isinstance(value, dict):
         return {key: _serialize(item) for key, item in value.items()}
     if isinstance(value, (list, tuple, set)):
@@ -83,16 +86,24 @@ def _stream_diagnostics(coordinator: PolestarCoordinator) -> dict[str, Any]:
     return streams
 
 
+_MIN_SECONDS_FOR_RATE = 3600  # the startup burst (every read once) would make a shorter window look huge
+
+
 def _api_call_diagnostics() -> dict[str, Any]:
     """Report gRPC call attempts per method since the library was loaded."""
     total = sum(grpc_call.CALL_COUNTS.values())
     elapsed = max(time.time() - grpc_call.CALL_COUNTS_SINCE, 1.0)
-    return {
+    out = {
         "total": total,
         "per_method": dict(sorted(grpc_call.CALL_COUNTS.items())),
         "since": datetime.fromtimestamp(grpc_call.CALL_COUNTS_SINCE, UTC).isoformat(),
-        "per_day_rate": round(total * 86400 / elapsed, 1),
+        "minutes_counted": round(elapsed / 60, 1),
     }
+    if elapsed >= _MIN_SECONDS_FOR_RATE:
+        out["per_day_rate"] = round(total * 86400 / elapsed, 1)
+    else:
+        out["per_day_rate"] = "counted after the first hour"
+    return out
 
 
 def _pb_str(field: int, value: str) -> bytes:

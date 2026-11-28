@@ -77,7 +77,25 @@ def test_api_calls_with_no_traffic(monkeypatch):
 
     assert api_calls["total"] == 0
     assert api_calls["per_method"] == {}
-    assert api_calls["per_day_rate"] == 0
+    # Too early to tell: the startup burst would otherwise read as thousands of calls a day.
+    assert api_calls["per_day_rate"] == "counted after the first hour"
+
+
+def test_api_call_rate_waits_for_the_first_hour(monkeypatch):
+    diagnostics = _load_diagnostics(monkeypatch)
+    # As a real download showed: 45 calls in the first 4 minutes.
+    monkeypatch.setattr(grpc_call, "CALL_COUNTS", Counter({"/svc.A/Get": 45}))
+    monkeypatch.setattr(grpc_call, "CALL_COUNTS_SINCE", time.time() - 4 * 60)
+
+    api_calls = diagnostics._api_call_diagnostics()
+
+    assert api_calls["per_day_rate"] == "counted after the first hour"
+    assert api_calls["minutes_counted"] == pytest.approx(4, abs=0.2)
+
+
+def test_bytes_are_listed_as_numbers(monkeypatch):
+    diagnostics = _load_diagnostics(monkeypatch)
+    assert diagnostics._serialize({"reports_light_warnings": b"\x01\x02\x15"}) == {"reports_light_warnings": [1, 2, 21]}
 
 
 def test_vehicle_block_reports_parking_climate_capabilities(monkeypatch):
