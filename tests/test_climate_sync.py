@@ -202,6 +202,11 @@ def test_alarm_triggered_sensor(utils):
         front_left=DoorStatus(alarm_status=AlarmStatus.OFF), rear_right=DoorStatus(alarm_status=AlarmStatus.TRIGGERED)
     )
     assert utils.alarm_triggered(ExteriorStatus(doors=fired)) is True
+    # Current cars send one alarm state for the whole car (exterior field 15).
+    from polestar_api.models.exterior import CarAlarmStatus
+
+    assert utils.alarm_triggered(ExteriorStatus(alarm=CarAlarmStatus.IDLE)) is False
+    assert utils.alarm_triggered(ExteriorStatus(alarm=CarAlarmStatus.TRIGGERED)) is True
 
 
 def _data(available, reason="UNSPECIFIED", seconds=1_794_990_000):
@@ -330,3 +335,24 @@ def test_tyre_attributes_only_when_pressures_are_reported(utils):
         "front_right_warning": "very_low",
         "rear_left_warning": "high",
     }
+
+
+def test_air_purification_attributes(utils):
+    from polestar_api.models.common import Timestamp
+    from polestar_api.models.precleaning import PreCleaningInfo
+
+    assert utils.air_purification_attributes(None) == {}
+    info = PreCleaningInfo(
+        last_cycle_completed=Timestamp(seconds=1764300000),
+        started_at=Timestamp(seconds=1764299400),
+        measurement_date=Timestamp(seconds=1764300060),
+        last_cycle_valid=True,
+        measured_air_quality_index=2,
+        measured_particulate_matter_2_5=7,
+    )
+    attrs = utils.air_purification_attributes(info)
+    assert attrs["started_at"] == "2025-11-28T03:10:00+00:00"
+    assert attrs["measured_at"] == "2025-11-28T03:21:00+00:00"
+    assert attrs["air_quality_index"] == 2 and attrs["pm2_5"] == 7 and attrs["last_cycle_valid"] is True
+    # Nothing measured yet: no attributes rather than zeros.
+    assert utils.air_purification_attributes(PreCleaningInfo()) == {}

@@ -67,6 +67,7 @@ from .coordinator import PolestarVehicleData
 from .entity import PolestarEntity, async_filter_supported_entities, async_remove_registered_entities
 from . import geocode
 from .utils import (
+    air_purification_attributes,
     connection_attributes,
     connection_text,
     service_plan_attributes,
@@ -177,6 +178,8 @@ class PolestarSensorDescription(SensorEntityDescription):
 
     value_fn: Callable[[PolestarVehicleData], StateType | None]
     attrs_fn: Callable[[PolestarVehicleData], dict[str, Any]] | None = None
+    # Attributes from the car record (loaded once at sign-in) rather than the polled data.
+    vehicle_attrs_fn: Callable[[Any], dict[str, Any]] | None = None
     fetch_attr: str | None = None
     required_data: Callable[[PolestarVehicleData], bool] | None = None
     requires_combustion_engine: bool = False
@@ -540,6 +543,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
             if d.precleaning and d.precleaning.last_cycle_completed and d.precleaning.last_cycle_completed.seconds
             else None
         ),
+        attrs_fn=lambda d: air_purification_attributes(d.precleaning),
     ),
     PolestarSensorDescription(
         key="air_quality_index",
@@ -589,6 +593,9 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.MINUTES,
         suggested_display_precision=0,
         value_fn=lambda d: climate_minutes_remaining(d.climate, dt_util.utcnow().timestamp()),
+        vehicle_attrs_fn=lambda v: (
+            {"max_runtime_minutes": v.climate_max_runtime_minutes} if getattr(v, "climate_max_runtime_minutes", None) else {}
+        ),
     ),
     PolestarSensorDescription(
         key="connection",
@@ -702,9 +709,12 @@ class PolestarSensor(PolestarEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        if self.coordinator.data is None or self.entity_description.attrs_fn is None:
-            return {}
-        return self.entity_description.attrs_fn(self.coordinator.data)
+        attrs: dict[str, Any] = {}
+        if self.entity_description.vehicle_attrs_fn is not None:
+            attrs.update(self.entity_description.vehicle_attrs_fn(self._vehicle))
+        if self.coordinator.data is not None and self.entity_description.attrs_fn is not None:
+            attrs.update(self.entity_description.attrs_fn(self.coordinator.data))
+        return attrs
 
 
 class PolestarVinSensor(PolestarEntity, SensorEntity):

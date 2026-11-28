@@ -27,6 +27,14 @@ class AlarmStatus(IntEnum):
     OFF = 2
 
 
+class CarAlarmStatus(IntEnum):
+    """The car's own alarm state: exterior field 15 in the current (flat) format. Numbered differently from AlarmStatus."""
+
+    UNSPECIFIED = 0
+    IDLE = 1
+    TRIGGERED = 2
+
+
 @dataclass(frozen=True)
 class DoorStatus(ProtoMessage, schema={1: "lock_status", 2: "open_status", 3: "alarm_status"}):
     lock_status: LockStatus = LockStatus.UNSPECIFIED
@@ -180,6 +188,8 @@ class ExteriorStatus(ProtoMessage, schema={
     hood: HoodStatus | None = None
     tailgate: TailgateStatus | None = None
     tank_lid: TankLidStatus | None = None
+    # Only in the flat format (field 15), so not in the schema above. A Polestar 2 and an XC40 send IDLE (28 Nov 2026).
+    alarm: CarAlarmStatus = CarAlarmStatus.UNSPECIFIED
 
     def merge(self, previous: ExteriorStatus | None) -> ExteriorStatus:
         """Merge a partial exterior update with a previous snapshot."""
@@ -194,6 +204,7 @@ class ExteriorStatus(ProtoMessage, schema={
             hood=_merge_message(self.hood, previous.hood),
             tailgate=_merge_message(self.tailgate, previous.tailgate),
             tank_lid=_merge_message(self.tank_lid, previous.tank_lid),
+            alarm=self.alarm if self.alarm != CarAlarmStatus.UNSPECIFIED else previous.alarm,
         )
 
     @property
@@ -210,7 +221,7 @@ class ExteriorStatus(ProtoMessage, schema={
                 self.tailgate,
                 self.tank_lid,
             )
-        )
+        ) or self.alarm != CarAlarmStatus.UNSPECIFIED
 
     @property
     def is_locked(self) -> bool | None:
