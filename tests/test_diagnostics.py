@@ -78,3 +78,28 @@ def test_api_calls_with_no_traffic(monkeypatch):
     assert api_calls["total"] == 0
     assert api_calls["per_method"] == {}
     assert api_calls["per_day_rate"] == 0
+
+
+def test_vehicle_block_reports_parking_climate_capabilities(monkeypatch):
+    from types import SimpleNamespace
+
+    from polestar_api.models.car_information import ParkingClimatizationCapabilities
+
+    diagnostics = _load_diagnostics(monkeypatch)
+    vehicle = SimpleNamespace(
+        model_name="Polestar 2",
+        model_year=2026,
+        parking_climate_capabilities=ParkingClimatizationCapabilities(supports_steering_wheel_settings=False),
+        steering_wheel_heat_levels=None,
+    )
+    coordinator = SimpleNamespace(
+        vehicle=vehicle, update_interval=None, last_update_success=True, _poll_count=0,
+        _unsupported_fetches=set(), _unsupported_streams=set(), _unsupported_commands=set(),
+        _STREAMS=(), _stream_tasks={}, _stream_last_data={}, data=None,
+    )
+
+    block = diagnostics._coordinator_diagnostics(coordinator)
+
+    assert block["parking_climate_capabilities"]["supports_steering_wheel_settings"] is False
+    assert block["parking_climate_capabilities"]["steering_wheel_setting_levels"] == 0
+    assert block["steering_wheel_heat_levels"] is None

@@ -120,8 +120,9 @@ _CAPABILITY_FETCHES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("reports_avg_consumption", ("avg_consumption",)),
     ("reports_avg_consumption_auto", ("avg_consumption_auto",)),
     ("reports_avg_consumption_since_charge", ("avg_consumption_since_charge",)),
-    # The car record has no flag for front-seat, steering wheel or temperature settings; the Polestar 2 (no rear seat
-    # settings either) cannot change them, so cars with rear seat settings are taken to have the full set.
+    # Front seat and steering wheel settings have their own flags in the car record (parking climate fields 8 and 10,
+    # shown in diagnostics), but they are not used yet: the Polestar 2 lacks rear seat settings and cannot change any
+    # of these remotely, so cars with rear seat settings are taken to have the full set.
     ("supports_rear_seat_heating", ("rear_seat_heating", "climate_settings")),
     # reports_tyre_pressure_warning is not used: the Polestar 2 does not send it yet its health record carries real
     # tyre warnings (the sensor showed "off"), so the flag would hide a working sensor.

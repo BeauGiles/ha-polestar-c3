@@ -389,3 +389,22 @@ async def test_steering_wheel_heat_levels_are_read(monkeypatch, sent, expected):
     await vehicle.async_load_car_information()
 
     assert vehicle.steering_wheel_heat_levels == expected
+
+
+@pytest.mark.asyncio
+async def test_parking_climate_capabilities_are_kept_for_diagnostics(monkeypatch):
+    # Polestar 2-like: no settings flags; a car that allows them sends 8 and 10 as true
+    climate = encode(
+        {"front": (8, "bool"), "wheel": (10, "bool"), "front_levels": (11, "int32"), "levels": (16, "int32")},
+        {"front": True, "wheel": True, "front_levels": 3, "levels": 1},
+    )
+    vehicle = _vehicle(monkeypatch, _response(_capable_car(climate=climate)))
+
+    await vehicle.async_load_car_information()
+
+    caps = vehicle.parking_climate_capabilities
+    assert caps.supports_front_seats_settings is True
+    assert caps.supports_steering_wheel_settings is True
+    assert caps.supports_rear_seats_settings is False
+    assert caps.front_seats_setting_levels == 3
+    assert caps.steering_wheel_setting_levels == 1
