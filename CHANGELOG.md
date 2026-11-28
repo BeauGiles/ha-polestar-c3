@@ -6,6 +6,8 @@ Dates are 2026.
 
 ## Unreleased
 
+## 0.6.0 (28 November)
+
 ### Added
 
 - **Has the car got the change yet?**
@@ -42,6 +44,10 @@ Dates are 2026.
 - **Vehicle info shows whether the car is set up for Plug & Charge.** A new `plug_and_charge_ready` attribute on the Vehicle info sensor comes from the car record: true when the car has a Plug & Charge contract ID. `plug_and_charge_pcid` shows the contract ID, as the Polestar app does. Both are read-only, because Polestar's backend doesn't offer a remote on/off for a Polestar 2. Diagnostics redact the ID.
 - **Air purification last cycle.** A diagnostic timestamp sensor shows when the last air purification cycle finished, as Volvo C3 already does. It comes from the pre-cleaning reply the integration already reads.
 - **Diagnostics show what the car lets the app set for parking climate.** These are the car record's flags for front seat, rear seat and steering wheel settings, the number of heat levels for each, and the steering wheel level count the select uses. The field numbers come from the Volvo app's proto: 8, 9, 10, 11, 15 and 16. Nothing changes in which entities appear. The Polestar 2 still has no climate seat, steering wheel or temperature settings, which matches the Polestar app, where it can only set these in the car.
+
+### Changed
+
+- **The Cabin air quality index sensor is now called Cabin PM2.5.** It has always shown PM2.5 in µg/m³, not the car's air quality index, which is now the `air_quality_index` attribute on Air purification last cycle. Only the display name changes: the entity ID, history and automations are the same. Matches Volvo C3.
 
 ### Fixed
 
