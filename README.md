@@ -37,6 +37,8 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Time to full charge | ✅ | ✅ |
 | Time to target charge and to minimum SoC | ✅ | 🧪 |
 | Charge port (hidden on Polestar 2, XC40 and C40, where it always reads closed), plugged in | ✅ | ✅ |
+| Charge now (overriding the charging schedule) | ✅ | ✅ |
+| Last charging error (which setting the car couldn't apply, and why) | ✅ | ✅ |
 | Saved charge locations, "at charge location" | ✅ | ➖ |
 | Location, with address | ✅ | ✅ |
 | Parked location | ✅ | ➖ |
@@ -45,7 +47,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Sunroof | ➖ | ◐ |
 | Central lock, boot lock | ✅ | ✅ |
 | Alarm triggered, In use, Online, Connection, unavailable reason | ✅ | ✅ |
-| Odometer, trip meters, average consumption, average speed (manual and auto trip) | ✅ (average speed hidden on the Polestar 2) | ✅ |
+| Odometer, trip meters, average consumption, average speed (manual and auto trip) | ✅ | ✅ |
 | Outside temperature | ✅ | ✅ |
 | Service required (with urgency), days, distance and engine hours to service | ✅ | ✅ |
 | Service plan (prepaid service contract: products, end dates, mileage limits) | 🧪 | ➖ |
@@ -58,6 +60,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 | Oil level (combustion cars) | ➖ | ◐ |
 | Climate active, status and time remaining | ✅ | 🧪 |
 | Cabin PM2.5 | ✅ | ✅ |
+| Air purification last cycle (start time, air quality index) | ✅ | ✅ |
 | Software version | ✅ | ✅ |
 | Driving journal: last trip, trips and distance this month (opt in) | ➖ | ✅ |
 | VIN, vehicle info, registration plate | ✅ | ✅ |
@@ -102,8 +105,8 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 
 | Platform | Examples |
 | --- | --- |
-| Sensor | State of charge, range, charging status, charger connection, Cold battery, climate status, odometer, service sensors, tyre pressures, software version, Connection, Vehicle info, Service plan (only when Polestar has one for the car) |
-| Binary sensor | Online, In use, Any door open, Climate active, Engine coolant low, Plugged in, Alarm triggered, Tyre warning, Service required, 12V battery, Brake fluid, Washer fluid, Light status, Battery thermal event, doors, windows, bonnet, boot, charge port (not on a Polestar 2) |
+| Sensor | State of charge, range, charging status, charger connection, Cold battery, climate status, odometer, service sensors, tyre pressures, software version, Connection, Vehicle info, Service plan (only when Polestar has one for the car), Last charging error, Air purification last cycle |
+| Binary sensor | Online, In use, Any door open, Climate active, Engine coolant low, Plugged in, Charge now, Alarm triggered, Tyre warning, Service required, 12V battery, Brake fluid, Washer fluid, Light status, Battery thermal event, doors, windows, bonnet, boot, charge port (not on a Polestar 2) |
 | Device tracker | Location, Parked location |
 | Lock | Lock, Boot lock |
 | Switch | Climate, Charging, Charging schedule, Air purification |
@@ -187,7 +190,7 @@ Since late November 2026 some Polestar ID accounts are asked for one more step a
 
 | Car | Market | Reported by | Notes |
 | --- | --- | --- | --- |
-| Polestar 2 | Australia | maintainer | Everything in the tables above except where marked ➖ or ◐. No average speed, cold battery status, altitude, heading or speed |
+| Polestar 2 | Australia | maintainer | Everything in the tables above except where marked ➖ or ◐. No cold battery status, altitude, heading or speed |
 
 Polestar 3 and 4 use the same platform and should work; several of the fixes taken from upstream were checked on a Polestar 4. [Open an issue](https://github.com/BeauGiles/ha-polestar-c3/issues/new/choose) with **Car report** to add yours.
 
