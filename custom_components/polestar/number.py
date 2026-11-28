@@ -134,6 +134,13 @@ class PolestarNumber(OptimisticStateMixin, PolestarEntity, RestoreEntity, Number
         return super().available
 
     @property
+    def native_min_value(self) -> float:
+        if self.entity_description.key == "target_soc" and self._vehicle.target_soc_min:
+            # The car's own limit (40 % on a Polestar 2). It refuses anything lower.
+            return float(self._vehicle.target_soc_min)
+        return super().native_min_value
+
+    @property
     def native_value(self) -> float | None:
         try:
             real_value = self.entity_description.value_fn(self.coordinator)
