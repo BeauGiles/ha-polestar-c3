@@ -15,7 +15,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import PolestarCoordinator, PolestarVehicleData
 from .entity import OptimisticStateMixin, PolestarEntity, async_filter_supported_entities
-from .utils import charge_timer_active, climate_attributes, precleaning_attributes
+from .utils import charge_timer_active, climate_attributes, precleaning_attributes, sync_attributes
 
 PARALLEL_UPDATES = 1
 
@@ -72,6 +72,7 @@ SWITCHES: tuple[PolestarSwitchDescription, ...] = (
         icon="mdi:clock-outline",
         entity_category=EntityCategory.CONFIG,
         is_on_fn=lambda d: charge_timer_active(d.charge_timer),
+        attrs_fn=lambda d: sync_attributes(getattr(getattr(d.charge_timer, "timer", None), "metadata", None)),
         turn_on_fn=lambda c: c.async_set_charge_timer(activated=True),
         turn_off_fn=lambda c: c.async_set_charge_timer(activated=False),
         capability="charge_timer",

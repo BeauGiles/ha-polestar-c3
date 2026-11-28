@@ -38,7 +38,7 @@ class AmpLimitServiceClient:
         payload = raw.get(3)
         if isinstance(payload, bytes):
             inner = decode(payload)
-            return AmpLimitResponse(amperage_limit=int(inner.get(1, 0) or 0))
+            return AmpLimitResponse(amperage_limit=int(inner.get(1, 0) or 0), updated_at=int(inner.get(2, 0) or 0))
         return AmpLimitResponse()
 
     async def get(self) -> AmpLimitResponse:

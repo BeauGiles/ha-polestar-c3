@@ -356,3 +356,24 @@ def test_air_purification_attributes(utils):
     assert attrs["air_quality_index"] == 2 and attrs["pm2_5"] == 7 and attrs["last_cycle_valid"] is True
     # Nothing measured yet: no attributes rather than zeros.
     assert utils.air_purification_attributes(PreCleaningInfo()) == {}
+
+
+def test_schedule_sync_attributes(utils):
+    from polestar_api.models.charging import BatteryChargeTimer, ChronosMetadata, SyncState, SyncStatus
+
+    # As a Polestar 2 sends its charge timer (28 Nov 2026): field 4 = {2: updated at (ms), 4: {1: SYNCED}}.
+    raw = bytes([0x18, 0x01, 0x22, 0x0B, 0x10]) + bytes.fromhex("cce09a909f34") + bytes([0x22, 0x02, 0x08, 0x02])
+    timer = BatteryChargeTimer.from_bytes(raw)
+    assert timer.activated and timer.metadata.sync_status.status is SyncState.SYNCED
+    attrs = utils.sync_attributes(timer.metadata)
+    assert attrs["sync_status"] == "synced" and attrs["updated_at"].startswith("2026-")
+
+    pending = ChronosMetadata(updated_at=0, sync_status=SyncStatus(status=SyncState.RETRYING_CAR_OFFLINE, message="car offline"))
+    assert utils.sync_attributes(pending) == {"sync_status": "retrying_car_offline", "sync_message": "car offline"}
+    assert utils.sync_attributes(None) == {}
+    assert utils.sync_attributes(ChronosMetadata()) == {}
+    # A timer we send carries no metadata.
+    assert b"\x22" not in BatteryChargeTimer(activated=True).to_bytes()
+
+    assert utils.updated_at_attributes(1795823305727) == {"updated_at": "2026-11-27T23:48:25.727000+00:00"}
+    assert utils.updated_at_attributes(0) == {}

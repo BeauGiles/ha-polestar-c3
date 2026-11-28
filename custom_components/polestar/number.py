@@ -17,6 +17,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .const import DOMAIN
 from .coordinator import PolestarCoordinator, PolestarVehicleData
 from .entity import OptimisticStateMixin, PolestarEntity, async_filter_supported_entities
+from .utils import updated_at_attributes
 from polestar_api.models.charging import ChargeTargetLevelSettingType
 from polestar_api.models.parking_climate_timer import ParkingClimateTimerSettings
 
@@ -31,6 +32,7 @@ class PolestarNumberDescription(NumberEntityDescription):
     set_fn: Callable[[PolestarCoordinator, float], Awaitable[Any] | None]
     restore_state: bool = False
     fetch_attr: str | None = None
+    attrs_fn: Callable[[PolestarCoordinator], dict[str, Any]] | None = None
 
 
 NUMBERS: tuple[PolestarNumberDescription, ...] = (
@@ -44,6 +46,7 @@ NUMBERS: tuple[PolestarNumberDescription, ...] = (
         native_step=10,
         value_fn=lambda c: c.data.target_soc.target_level if c.data and c.data.target_soc else None,
         set_fn=lambda c, val: c.async_set_target_soc(int(val)),
+        attrs_fn=lambda c: updated_at_attributes(getattr(c.data.target_soc, "updated_at", 0)) if c.data else {},
     ),
     PolestarNumberDescription(
         key="amp_limit",
@@ -56,6 +59,7 @@ NUMBERS: tuple[PolestarNumberDescription, ...] = (
         native_step=1,
         value_fn=lambda c: c.data.amp_limit.amperage_limit if c.data and c.data.amp_limit else None,
         set_fn=lambda c, val: c.async_set_amp_limit(int(val)),
+        attrs_fn=lambda c: updated_at_attributes(getattr(c.data.amp_limit, "updated_at", 0)) if c.data else {},
     ),
     PolestarNumberDescription(
         key="climate_target_temperature",
@@ -156,6 +160,16 @@ class PolestarNumber(OptimisticStateMixin, PolestarEntity, RestoreEntity, Number
         except (AttributeError, TypeError):
             return None
         return self._resolve_optimistic(real_value)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        fn = self.entity_description.attrs_fn
+        if fn is None:
+            return None
+        try:
+            return fn(self.coordinator) or None
+        except (AttributeError, TypeError):
+            return None
 
     async def async_set_native_value(self, value: float) -> None:
         if self.entity_description.key == "climate_target_temperature":

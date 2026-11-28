@@ -259,6 +259,32 @@ def air_purification_attributes(precleaning: Any) -> dict[str, Any]:
     return attrs
 
 
+def updated_at_attributes(millis: Any) -> dict[str, Any]:
+    """{"updated_at": ISO time} for a chronos setting's backend change time (epoch ms), or {} when it isn't sent."""
+    if not isinstance(millis, int) or millis <= 0:
+        return {}
+    return {"updated_at": datetime.fromtimestamp(millis / 1000, tz=dt_util.UTC).isoformat()}
+
+
+def sync_attributes(metadata: Any) -> dict[str, Any]:
+    """Whether a schedule change has reached the car, from chronos metadata.
+
+    ``sync_status`` is ``synced`` once the car has the change; ``syncing``, ``retrying`` or ``retrying_car_offline``
+    while it's still on its way, and ``error`` if the car refused it. A pending change otherwise looks applied.
+    """
+    if metadata is None:
+        return {}
+    attrs = updated_at_attributes(getattr(metadata, "updated_at", 0))
+    sync = getattr(metadata, "sync_status", None)
+    status = getattr(sync, "status", None)
+    if status is not None and int(status):
+        attrs["sync_status"] = status.name.lower()
+    message = getattr(sync, "message", "") if sync is not None else ""
+    if message:
+        attrs["sync_message"] = message
+    return attrs
+
+
 def weather_attributes(weather: Any) -> dict[str, Any]:
     """When the weather service says the outside temperature was taken (it is a lookup at the car's location)."""
     millis = getattr(weather, "timestamp_epoch_millis", 0) if weather else 0
