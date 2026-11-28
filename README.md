@@ -214,6 +214,10 @@ The upstream project publishes an [API reference](https://kildahldev.github.io/u
 
 A design for sharing this library with Volvo C3 is in the [Volvo C3 repository](https://github.com/BeauGiles/ha-volvo-c3/blob/main/docs/design-shared-c3-library.md).
 
+## Open investigations
+
+- **Service plan & service booking**: the app has GraphQL operations for these, but they come back empty on the one account tested so far (a fleet-ordered Polestar 2 in Australia). If you're in a different country or have a privately-ordered car, see [service-plans-and-bookings.md](service-plans-and-bookings.md) for how to test and report back.
+
 ## Credits
 
 This started as a fork of [kildahldev/unofficial-polestar-api](https://github.com/kildahldev/unofficial-polestar-api) (MIT) and has since been reworked. Thanks to its author and the contributors whose fixes were taken from the upstream project: mvillarejo, ericyew, Martin Leisssoo (`MartinLeisssoo`), vladyspavlov, Rick van der Staaij (`rick-nu`) and TheOriginal92. See the [changelog](CHANGELOG.md) for what came from where.
