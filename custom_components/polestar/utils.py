@@ -259,11 +259,17 @@ def air_purification_attributes(precleaning: Any) -> dict[str, Any]:
     return attrs
 
 
-def updated_at_attributes(millis: Any) -> dict[str, Any]:
-    """{"updated_at": ISO time} for a chronos setting's backend change time (epoch ms), or {} when it isn't sent."""
-    if not isinstance(millis, int) or millis <= 0:
-        return {}
-    return {"updated_at": datetime.fromtimestamp(millis / 1000, tz=dt_util.UTC).isoformat()}
+def updated_at_attributes(millis: Any, source: Any = "") -> dict[str, Any]:
+    """{"updated_at": ISO time, "changed_by": "mapp"} for a chronos setting, leaving out what isn't sent.
+
+    ``changed_by`` is the backend's source of the last change: ``mapp`` (the app) or ``car``.
+    """
+    attrs: dict[str, Any] = {}
+    if isinstance(millis, int) and millis > 0:
+        attrs["updated_at"] = datetime.fromtimestamp(millis / 1000, tz=dt_util.UTC).isoformat()
+    if isinstance(source, str) and source:
+        attrs["changed_by"] = source
+    return attrs
 
 
 def sync_attributes(metadata: Any) -> dict[str, Any]:
@@ -274,7 +280,7 @@ def sync_attributes(metadata: Any) -> dict[str, Any]:
     """
     if metadata is None:
         return {}
-    attrs = updated_at_attributes(getattr(metadata, "updated_at", 0))
+    attrs = updated_at_attributes(getattr(metadata, "updated_at", 0), getattr(metadata, "source", ""))
     sync = getattr(metadata, "sync_status", None)
     status = getattr(sync, "status", None)
     if status is not None and int(status):

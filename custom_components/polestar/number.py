@@ -46,7 +46,9 @@ NUMBERS: tuple[PolestarNumberDescription, ...] = (
         native_step=10,
         value_fn=lambda c: c.data.target_soc.target_level if c.data and c.data.target_soc else None,
         set_fn=lambda c, val: c.async_set_target_soc(int(val)),
-        attrs_fn=lambda c: updated_at_attributes(getattr(c.data.target_soc, "updated_at", 0)) if c.data else {},
+        attrs_fn=lambda c: updated_at_attributes(getattr(c.data.target_soc, "updated_at", 0), getattr(c.data.target_soc, "source", ""))
+        if c.data
+        else {},
     ),
     PolestarNumberDescription(
         key="amp_limit",
@@ -59,7 +61,9 @@ NUMBERS: tuple[PolestarNumberDescription, ...] = (
         native_step=1,
         value_fn=lambda c: c.data.amp_limit.amperage_limit if c.data and c.data.amp_limit else None,
         set_fn=lambda c, val: c.async_set_amp_limit(int(val)),
-        attrs_fn=lambda c: updated_at_attributes(getattr(c.data.amp_limit, "updated_at", 0)) if c.data else {},
+        attrs_fn=lambda c: updated_at_attributes(getattr(c.data.amp_limit, "updated_at", 0), getattr(c.data.amp_limit, "source", ""))
+        if c.data
+        else {},
     ),
     PolestarNumberDescription(
         key="climate_target_temperature",

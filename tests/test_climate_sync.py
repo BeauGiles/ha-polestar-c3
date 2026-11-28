@@ -377,3 +377,5 @@ def test_schedule_sync_attributes(utils):
 
     assert utils.updated_at_attributes(1795823305727) == {"updated_at": "2026-11-27T23:48:25.727000+00:00"}
     assert utils.updated_at_attributes(0) == {}
+    assert utils.updated_at_attributes(1795823305727, "mapp")["changed_by"] == "mapp"
+    assert utils.sync_attributes(ChronosMetadata(source="car")) == {"changed_by": "car"}

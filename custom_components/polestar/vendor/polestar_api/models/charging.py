@@ -38,6 +38,7 @@ class TargetSocResponse(ProtoMessage, schema={
     # The car's active mode, populated from GetTargetSoc (not on the wire here).
     setting_type: ChargeTargetLevelSettingType = ChargeTargetLevelSettingType.UNSPECIFIED
     updated_at: int = 0  # epoch ms the backend last changed it, from GetTargetSoc (not on the wire here)
+    source: str = ""  # who made that change: "mapp" (the app) or "car", from GetTargetSoc
 
 
 # -- Amp Limit --
@@ -56,6 +57,7 @@ class AmpLimitResponse(ProtoMessage, schema={
     response_status: ResponseStatus | None = None
     amperage_limit: int = 0
     updated_at: int = 0  # epoch ms the backend last changed it, from GetAmpLimit (not on the wire here)
+    source: str = ""  # who made that change, from GetAmpLimit
 
 
 # -- Charge Timer --
@@ -92,9 +94,10 @@ class SyncStatus(ProtoMessage, schema={1: "status", 2: "message"}):
 
 
 @dataclass(frozen=True)
-class ChronosMetadata(ProtoMessage, schema={2: "updated_at", 4: "sync_status"}):
+class ChronosMetadata(ProtoMessage, schema={2: "updated_at", 3: "source", 4: "sync_status"}):
     """chronos common.v1 Metadata, set by the backend (never sent by us)."""
     updated_at: int = 0  # epoch milliseconds
+    source: str = ""  # who made the last change: "mapp" (the app) or "car"
     sync_status: SyncStatus | None = None
 
 

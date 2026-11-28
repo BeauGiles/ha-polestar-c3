@@ -9,8 +9,8 @@ Dates are 2026.
 ### Added
 
 - **Has the car got the change yet?**
-  - The Charge timer switch has a `sync_status` attribute: `synced` once the car has the change, or `syncing`, `retrying`, `retrying_car_offline` or `error` while it hasn't. It also shows `updated_at` and, when the backend sends one, `sync_message`. Until now a pending change looked the same as an applied one.
-  - Target SoC and Charge current show `updated_at`: when the backend last changed the setting. These settings have no sync status.
+  - The Charge timer switch has a `sync_status` attribute: `synced` once the car has the change, or `syncing`, `retrying`, `retrying_car_offline` or `error` while it hasn't. It also shows `updated_at` and, when the backend sends one, `sync_message`, and `changed_by` (`mapp` for the app, or `car`). Until now a pending change looked the same as an applied one.
+  - Target SoC and Charge current show `updated_at` (when the backend last changed the setting) and `changed_by`. These settings have no sync status.
   - Climate timers aren't included, because neither car sends a sync status for them.
 
   Matches Volvo C3.
