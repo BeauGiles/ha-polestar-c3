@@ -103,8 +103,17 @@ class TargetChargeLevelSettings(ProtoMessage, schema={
 
 
 @dataclass(frozen=True)
+class AmperageLimitSettings(ProtoMessage, schema={3: "min_limit", 4: "max_limit"}):
+    """The charge current range the car accepts (6–32 A on an Australian Polestar 2; higher in North America)."""
+
+    min_limit: int = 0
+    max_limit: int = 0
+
+
+@dataclass(frozen=True)
 class ChargingCapabilities(ProtoMessage, schema={
     8: "target_charge_level_settings",
+    9: "amperage_limit_settings",
     16: "max_number_of_locations",
     20: "plug_and_charge_pcid",
     29: "supports_plug_and_charge",
@@ -116,6 +125,7 @@ class ChargingCapabilities(ProtoMessage, schema={
     """
 
     target_charge_level_settings: TargetChargeLevelSettings | None = None
+    amperage_limit_settings: AmperageLimitSettings | None = None
     max_number_of_locations: int = 0
     # Plug & Charge contract certificate ID: only a car set up for Plug & Charge has one.
     plug_and_charge_pcid: str = ""

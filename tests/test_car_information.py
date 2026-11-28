@@ -357,6 +357,25 @@ async def test_plug_and_charge_unknown_without_a_charging_block(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("low", "high", "expected"),
+    [
+        (6, 32, (6, 32)),  # Polestar 2 and XC40 in Australia (28 Nov 2026 dumps)
+        (6, 48, (6, 48)),  # a North American car
+        (0, 0, (None, None)),  # not reported
+        (32, 6, (None, None)),  # nonsense: keep the defaults
+    ],
+)
+async def test_charge_current_range_is_read_from_the_car_record(monkeypatch, low, high, expected):
+    amps = encode({"min": (3, "int32"), "max": (4, "int32")}, {"min": low, "max": high})
+    vehicle = _vehicle(monkeypatch, _response(_capable_car(charging=encode_message(9, amps))))
+
+    await vehicle.async_load_car_information()
+
+    assert (vehicle.amp_limit_min, vehicle.amp_limit_max) == expected
+
+
+@pytest.mark.asyncio
 async def test_no_lowest_target_charge_level_when_the_car_reports_zero(monkeypatch):
     charging = encode_message(8, encode({"presets": (3, "bool")}, {"presets": True}))
     vehicle = _vehicle(monkeypatch, _response(_capable_car(charging=charging)))

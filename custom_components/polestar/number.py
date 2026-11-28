@@ -138,7 +138,16 @@ class PolestarNumber(OptimisticStateMixin, PolestarEntity, RestoreEntity, Number
         if self.entity_description.key == "target_soc" and self._vehicle.target_soc_min:
             # The car's own limit (40 % on a Polestar 2). It refuses anything lower.
             return float(self._vehicle.target_soc_min)
+        if self.entity_description.key == "amp_limit" and self._vehicle.amp_limit_min:
+            return float(self._vehicle.amp_limit_min)
         return super().native_min_value
+
+    @property
+    def native_max_value(self) -> float:
+        if self.entity_description.key == "amp_limit" and self._vehicle.amp_limit_max:
+            # The car's own limit: 32 A in Australia, up to 48 A on North American cars.
+            return float(self._vehicle.amp_limit_max)
+        return super().native_max_value
 
     @property
     def native_value(self) -> float | None:
