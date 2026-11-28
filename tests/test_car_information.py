@@ -378,3 +378,14 @@ async def test_tailgate_control_support_comes_from_the_car(monkeypatch, locks, e
     await vehicle.async_load_car_information()
 
     assert vehicle.supports_tailgate_control is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("sent", "expected"), [(1, 1), (3, 3), (0, None)])
+async def test_steering_wheel_heat_levels_are_read(monkeypatch, sent, expected):
+    climate = encode({"front": (8, "bool"), "levels": (16, "int32")}, {"front": True, "levels": sent})
+    vehicle = _vehicle(monkeypatch, _response(_capable_car(climate=climate)))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.steering_wheel_heat_levels == expected
