@@ -295,7 +295,7 @@
         }
       },
       "avg_consumption": {
-        "name": "Average consumption"
+        "name": "Average consumption (trip)"
       },
       "avg_consumption_auto": {
         "name": "Average consumption (auto)"
@@ -489,7 +489,7 @@
         "name": "Trip meter (auto)"
       },
       "trip_meter_manual": {
-        "name": "Trip meter (manual)"
+        "name": "Trip meter (manual trip)"
       },
       "vehicle_info": {
         "name": "Vehicle info"
@@ -498,7 +498,7 @@
         "name": "VIN"
       },
       "avg_speed": {
-        "name": "Average speed"
+        "name": "Average speed (trip)"
       },
       "avg_speed_auto": {
         "name": "Average speed (auto)"
