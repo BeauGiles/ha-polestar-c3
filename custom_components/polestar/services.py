@@ -68,7 +68,7 @@ SERVICE_SCHEMAS: dict[str, vol.Schema] = {
         {
             **_TARGET_SCHEMA,
             vol.Required("alias"): cv.string,
-            vol.Optional("amp_limit", default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=32)),
+            vol.Optional("amp_limit", default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=80)),
             vol.Optional("minimum_soc", default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
             vol.Optional("optimised_charging", default=False): cv.boolean,
         }
@@ -78,7 +78,7 @@ SERVICE_SCHEMAS: dict[str, vol.Schema] = {
             **_TARGET_SCHEMA,
             vol.Required(ATTR_LOCATION_ID): cv.string,
             vol.Optional("alias"): cv.string,
-            vol.Optional("amp_limit"): vol.All(vol.Coerce(int), vol.Range(min=0, max=32)),
+            vol.Optional("amp_limit"): vol.All(vol.Coerce(int), vol.Range(min=0, max=80)),
             vol.Optional("minimum_soc"): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
             vol.Optional("optimised_charging"): cv.boolean,
         }
@@ -292,9 +292,17 @@ async def _async_handle_clear_charge_timer(hass: HomeAssistant, call: ServiceCal
     await coordinator.async_clear_charge_timer()
 
 
+def _check_amp_limit(coordinator: PolestarCoordinator, amps: int | None) -> None:
+    """Refuse an amp limit above what the car's record allows (0 means "no limit")."""
+    high = getattr(coordinator.vehicle, "amp_limit_max", None)
+    if amps and high and amps > high:
+        raise ServiceValidationError(f"amp_limit {amps} A is above this car's maximum of {high} A")
+
+
 async def _async_handle_create_charge_location(hass: HomeAssistant, call: ServiceCall) -> None:
     data = _normalise_service_data(call)
     coordinator = _resolve_coordinator(hass, data)
+    _check_amp_limit(coordinator, data["amp_limit"])
     await coordinator.async_create_charge_location(
         alias=data["alias"],
         amp_limit=data["amp_limit"],
@@ -306,6 +314,7 @@ async def _async_handle_create_charge_location(hass: HomeAssistant, call: Servic
 async def _async_handle_update_charge_location(hass: HomeAssistant, call: ServiceCall) -> None:
     data = _normalise_service_data(call)
     coordinator = _resolve_coordinator(hass, data)
+    _check_amp_limit(coordinator, data.get("amp_limit"))
     await coordinator.async_update_charge_location(
         location_id=data[ATTR_LOCATION_ID],
         alias=data.get("alias"),

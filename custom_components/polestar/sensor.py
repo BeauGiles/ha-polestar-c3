@@ -503,6 +503,19 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
         value_fn=lambda d: d.health.rear_right_tyre_pressure_kpa if d.health else None,
     ),
     PolestarSensorDescription(
+        key="air_purification_last_cycle",
+        fetch_attr="precleaning",
+        translation_key="air_purification_last_cycle",
+        icon="mdi:air-purifier",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda d: _timestamp_or_none(
+            d.precleaning.last_cycle_completed.seconds
+            if d.precleaning and d.precleaning.last_cycle_completed and d.precleaning.last_cycle_completed.seconds
+            else None
+        ),
+    ),
+    PolestarSensorDescription(
         key="air_quality_index",
         fetch_attr="precleaning",
         translation_key="air_quality_index",

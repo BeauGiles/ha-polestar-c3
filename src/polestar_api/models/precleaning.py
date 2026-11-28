@@ -39,6 +39,7 @@ class PreCleaningErrorType(IntEnum):
 @dataclass(frozen=True)
 class PreCleaningInfo(ProtoMessage, schema={
     1: "timestamp",
+    2: "last_cycle_completed",
     4: "started_at",
     5: "ending_at",
     6: "running_status",
@@ -50,6 +51,7 @@ class PreCleaningInfo(ProtoMessage, schema={
     13: "error",
 }):
     timestamp: Timestamp | None = None
+    last_cycle_completed: Timestamp | None = None
     started_at: Timestamp | None = None
     ending_at: Timestamp | None = None
     running_status: PreCleaningRunningStatus = PreCleaningRunningStatus.UNSPECIFIED
