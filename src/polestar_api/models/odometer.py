@@ -14,6 +14,8 @@ class OdometerStatus(ProtoMessage, schema={
     2: "odometer_meters",
     3: "trip_meter_manual_km",
     4: "trip_meter_automatic_km",
+    5: "average_speed_km_per_hour",
+    6: "average_speed_km_per_hour_automatic",
 }):
     """Odometer and trip meter readings from the DT odometer service.
 
@@ -24,6 +26,10 @@ class OdometerStatus(ProtoMessage, schema={
     odometer_meters: int = 0
     trip_meter_manual_km: float = 0.0
     trip_meter_automatic_km: float = 0.0
+    # Same meaning as the dashboard's avg_speed_manual / avg_speed_auto. The dashboard service is gone
+    # (UNIMPLEMENTED since Polestar app 5.15), so these are where the average speeds come from now.
+    average_speed_km_per_hour: int = 0
+    average_speed_km_per_hour_automatic: int = 0
 
     @property
     def odometer_km(self) -> float:

@@ -6,6 +6,7 @@ the decompiled app versus schema-derived best-effort.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
@@ -23,6 +24,10 @@ from ..models.consent import (
 if TYPE_CHECKING:
     from ..connection import GrpcConnection
 
+# GetRemoteFunctionDataSharing is a server stream in the app: the first message is the
+# current state, then the stream stays open. Read that first message, give up after this long.
+_STREAM_TIMEOUT = 10.0
+
 
 class ConsentServiceClient:
     """Data-sharing / privacy-consent settings for a car."""
@@ -39,15 +44,24 @@ class ConsentServiceClient:
         return await self._connection.get_metadata(self._vin)
 
     async def get_remote_function_data_sharing(self) -> RemoteFunctionDataSharing | None:
-        """Read the overall "share remote function data" toggle."""
+        """Read the overall "share remote function data" toggle.
+
+        A server stream: reading it as a unary call waited for a close that never comes and timed out.
+        """
         request = RemoteFunctionDataSharingRequest(vin=self._vin)
         metadata = await self._metadata()
-        data = await grpc_call.unary_unary(
-            self._connection.channel,
-            f"{self._svc}/GetRemoteFunctionDataSharing",
-            request.to_bytes(),
-            metadata=metadata,
-        )
+        data = None
+        try:
+            async with asyncio.timeout(_STREAM_TIMEOUT):
+                async for data in grpc_call.unary_stream(
+                    self._connection.channel,
+                    f"{self._svc}/GetRemoteFunctionDataSharing",
+                    request.to_bytes(),
+                    metadata=metadata,
+                ):
+                    break
+        except TimeoutError:
+            pass
         if not data:
             return None
         return RemoteFunctionDataSharing.from_bytes(data)
