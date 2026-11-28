@@ -40,6 +40,7 @@ class PreCleaningErrorType(IntEnum):
 class PreCleaningInfo(ProtoMessage, schema={
     1: "timestamp",
     2: "last_cycle_completed",
+    3: "measurement_date",
     4: "started_at",
     5: "ending_at",
     6: "running_status",
@@ -52,6 +53,7 @@ class PreCleaningInfo(ProtoMessage, schema={
 }):
     timestamp: Timestamp | None = None
     last_cycle_completed: Timestamp | None = None
+    measurement_date: Timestamp | None = None  # when the cabin air was last measured
     started_at: Timestamp | None = None
     ending_at: Timestamp | None = None
     running_status: PreCleaningRunningStatus = PreCleaningRunningStatus.UNSPECIFIED

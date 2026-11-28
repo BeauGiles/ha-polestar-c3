@@ -72,6 +72,33 @@ class DigitalKeyType(IntEnum):
     CCC = 4
 
 
+class ElectricInletDcLocation(IntEnum):
+    UNSPECIFIED = 0
+    NONE = 1
+    LEFT = 2
+    RIGHT = 3
+
+
+class DriverSide(IntEnum):
+    UNSPECIFIED = 0
+    LEFT = 1
+    RIGHT = 2
+
+
+class ParkingClimatizationType(IntEnum):
+    UNSPECIFIED = 0
+    NONE = 1
+    HEATING = 2
+    HEATING_AND_COOLING = 3
+
+
+class ParkingHeatingType(IntEnum):
+    UNSPECIFIED = 0
+    NONE = 1
+    FUEL = 2
+    ELECTRICAL = 3
+
+
 @dataclass(frozen=True)
 class Propulsion(ProtoMessage, schema={
     1: "drivetrain_type",
@@ -113,6 +140,7 @@ class AmperageLimitSettings(ProtoMessage, schema={3: "min_limit", 4: "max_limit"
 
 @dataclass(frozen=True)
 class ChargingCapabilities(ProtoMessage, schema={
+    2: "electric_inlet_dc_location",
     8: "target_charge_level_settings",
     9: "amperage_limit_settings",
     16: "max_number_of_locations",
@@ -125,6 +153,8 @@ class ChargingCapabilities(ProtoMessage, schema={
     answers those requests with "Validation failed").
     """
 
+    # Which side the DC (fast charging) inlet is on: left on a Polestar 2 and an XC40.
+    electric_inlet_dc_location: ElectricInletDcLocation = ElectricInletDcLocation.UNSPECIFIED
     target_charge_level_settings: TargetChargeLevelSettings | None = None
     amperage_limit_settings: AmperageLimitSettings | None = None
     max_number_of_locations: int = 0
@@ -140,6 +170,9 @@ class ParkingClimatizationTimers(ProtoMessage, schema={7: "max_number"}):
 
 @dataclass(frozen=True)
 class ParkingClimatizationCapabilities(ProtoMessage, schema={
+    1: "type",
+    2: "heating_type",
+    3: "max_runtime",
     8: "supports_front_seats_settings",
     9: "supports_rear_seats_settings",
     10: "supports_steering_wheel_settings",
@@ -156,6 +189,10 @@ class ParkingClimatizationCapabilities(ProtoMessage, schema={
     from the JSON car record.
     """
 
+    type: ParkingClimatizationType = ParkingClimatizationType.UNSPECIFIED
+    heating_type: ParkingHeatingType = ParkingHeatingType.UNSPECIFIED
+    # Longest climate run in minutes: 30 on a Polestar 2 and an XC40 (28 Nov 2026). 0 when the car doesn't say.
+    max_runtime: int = 0
     supports_front_seats_settings: bool = False
     supports_rear_seats_settings: bool = False
     supports_steering_wheel_settings: bool = False
@@ -241,6 +278,9 @@ class CarDetails(ProtoMessage, schema={
     49: "reports_avg_electric_consumption_last_charge",
     50: "reports_tyre_pressure_in_kpa",
     87: "reports_service_warning",
+    44: "gross_vehicle_weight_rating",
+    46: "driver_side",
+    86: "supports_pilot_assist",
     92: "software_installed_at",
 }):
     """Identity of a car. ``vehicle_type_name`` is the model name, e.g. ``Polestar 4``."""
@@ -278,6 +318,9 @@ class CarDetails(ProtoMessage, schema={
     # (28 Nov 2026), so it's taken to be when the current software was installed. A Polestar 2 that has never had an
     # OTA doesn't send it.
     software_installed_at: Timestamp | None = None
+    gross_vehicle_weight_rating: Annotated[float, Float32] = 0.0  # kg: 2600 on a Polestar 2, 2650 on an XC40
+    driver_side: DriverSide = DriverSide.UNSPECIFIED
+    supports_pilot_assist: bool = False
 
 
 @dataclass(frozen=True)

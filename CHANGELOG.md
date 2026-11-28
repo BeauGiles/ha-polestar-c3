@@ -8,6 +8,21 @@ Dates are 2026.
 
 ### Added
 
+- **Air purification last cycle has attributes:**
+  - `started_at`: when the cycle started.
+  - `measured_at`: when the cabin air was last measured.
+  - `air_quality_index`: the car's own index, a different value from the PM2.5 that the Air quality sensor shows.
+  - `pm2_5`.
+  - `last_cycle_valid`.
+
+  Matches Volvo C3.
+- **Climate time remaining shows the longest climate run** as `max_runtime_minutes`, from the car record (30 on a Polestar 2). Matches Volvo C3.
+- **Vehicle info shows more facts from the car record:**
+  - `c3_driver_side`
+  - `c3_gross_vehicle_weight_rating` (kg)
+  - `c3_supports_pilot_assist`
+  - `c3_charging_electric_inlet_dc_location`
+  - `c3_parking_climatization_type`, `c3_parking_climatization_heating_type` and `c3_parking_climatization_max_runtime`
 - **Charge now.** A binary sensor shows whether charge now is overriding the charge timer, read from the same backend state the app uses. Its attributes say the exact state, including pending, and which charge-now button the app offers (`charge_now`, `resume_schedule` or `not_applicable`). It's refreshed after Start or Stop charging. Matches Volvo C3.
 - **Last charging error.** A diagnostic timestamp sensor listens to the backend's error stream, which stays silent until the car can't apply a change to charging or the climate timers. It then shows when that happened, with `setting`, `error` and `action` attributes, for example charge now, `car`, `start_override_charge_timer`. Its state changes, so automations can trigger on it. Matches Volvo C3.
 - **The software update shows when the current software was installed.** An `installed_at` attribute comes from a car record field neither app names (92). An XC40 sends it about 47 s after its last OTA install finished. A car that has never had an OTA, such as a Polestar 2 still on its factory software, doesn't send it, so the attribute stays empty until the first OTA. The car record is now re-read every 6 hours and right after an install completes, instead of only at startup.
@@ -24,6 +39,7 @@ Dates are 2026.
 
 ### Fixed
 
+- **The alarm sensor now sees a triggered alarm.** The car reports its alarm in a field of the exterior reply that the integration skipped (15), so Alarm triggered could never turn on, even while the app showed the alarm and sent a notification. It now reads that field, and still checks the per-door alarm states as before. Both cars report `IDLE` when parked. Matches Volvo C3.
 - **The charge current slider follows the car's own range.** The car record says which currents the car accepts: 6–32 A on an Australian Polestar 2, up to 48 A in North America. The slider was fixed at 6–32 A. The charge location actions now accept up to 80 A and check the value against the car's maximum.
 - **Average speed sensors come back.** Polestar removed the dashboard service the average speeds came from (it now answers "Method not found"), so both sensors stayed hidden. The odometer reply carries the same two values (fields 5 and 6), and the sensors now fall back to it.
 - **Reading the remote data-sharing setting no longer times out.** It's a stream in the app, but the library read it as a single reply and waited for a close that never comes. It now takes the first message. No entity uses it today; this is the library getter only.

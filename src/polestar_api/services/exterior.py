@@ -9,6 +9,7 @@ from .. import grpc as grpc_call
 from ..codec import decode
 from ..models.common import VehicleRequest
 from ..models.exterior import (
+    CarAlarmStatus,
     CentralLockStatus,
     DoorStatus,
     DoorsStatus,
@@ -54,6 +55,13 @@ class ExteriorServiceClient:
         except ValueError:
             return OpenStatus.UNSPECIFIED
 
+    @staticmethod
+    def _alarm(value: int | None) -> CarAlarmStatus:
+        try:
+            return CarAlarmStatus(value or 0)
+        except ValueError:
+            return CarAlarmStatus.UNSPECIFIED
+
     @classmethod
     def _parse_digital_twin(cls, exterior_bytes: bytes) -> ExteriorStatus:
         raw = decode(exterior_bytes)
@@ -80,6 +88,7 @@ class ExteriorServiceClient:
             ),
             tank_lid=TankLidStatus(open_status=cls._open(raw.get(13))),
             sunroof=SunroofStatus(open_status=cls._open(raw.get(14))),
+            alarm=cls._alarm(raw.get(15)),
         )
 
     @classmethod

@@ -58,3 +58,33 @@ def test_air_purification_capability_decodes_and_is_absent_without_the_plus_pack
     assert with_pack.air_purification is not None and with_pack.air_purification.any_supported
     # A car without the feature does not send field 34 at all.
     assert CarDetails.from_bytes(_ld(1, b"VIN")).air_purification is None
+
+
+def test_car_facts_decode():
+    # As a Polestar 2 sends them (28 Nov 2026): 2600 kg, left-hand drive, pilot assist, DC inlet on the left,
+    # electric parking heating and cooling, climate runs of up to 30 minutes.
+    from polestar_api.models.car_information import (
+        DriverSide,
+        ElectricInletDcLocation,
+        ParkingClimatizationType,
+        ParkingHeatingType,
+    )
+
+    car = CarDetails.from_bytes(
+        _ld(1, b"VIN")
+        + _ld(35, _field(2, 0, _varint(2)))
+        + _ld(37, _field(1, 0, _varint(3)) + _field(2, 0, _varint(3)) + _field(3, 0, _varint(30)))
+        + _field(44, 5, struct.pack("<f", 2600.0))
+        + _field(46, 0, _varint(1))
+        + _field(86, 0, _varint(1))
+    )
+    assert car.gross_vehicle_weight_rating == 2600.0
+    assert car.driver_side is DriverSide.LEFT
+    assert car.supports_pilot_assist is True
+    assert car.charging.electric_inlet_dc_location is ElectricInletDcLocation.LEFT
+    assert car.parking_climatization.type is ParkingClimatizationType.HEATING_AND_COOLING
+    assert car.parking_climatization.heating_type is ParkingHeatingType.ELECTRICAL
+    assert car.parking_climatization.max_runtime == 30
+    from polestar_api.wire import unknown_fields
+
+    assert not unknown_fields(car)

@@ -145,6 +145,7 @@ class Vehicle:
         self.supports_honk_and_flash: bool | None = None
         self.reports_light_warnings: bool | None = None
         self.car_capabilities: dict = {}
+        self.climate_max_runtime_minutes: int | None = None  # 30 on a Polestar 2 and an XC40
         self.supports_charge_locations: bool | None = None
         self.supports_window_control: bool | None = None
         # Power tailgate open and close (car record, locks field 7); None until the record has been read.
@@ -239,6 +240,7 @@ class Vehicle:
             self.supports_rear_seat_heating = bool(car.parking_climatization.supports_rear_seats_settings)
             timers = car.parking_climatization.timers
             self.max_climate_timers = timers.max_number if timers is not None else 0
+            self.climate_max_runtime_minutes = car.parking_climatization.max_runtime or None
             self.steering_wheel_heat_levels = car.parking_climatization.steering_wheel_setting_levels or None
         if car is not None and car.locks is not None:
             self.supports_window_control = bool(car.locks.supports_window_control)

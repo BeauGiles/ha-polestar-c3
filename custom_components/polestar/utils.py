@@ -11,7 +11,7 @@ from typing import Any
 from homeassistant.util import dt as dt_util
 
 from polestar_api.models.charge_location import ChargeLocation
-from polestar_api.models.exterior import AlarmStatus
+from polestar_api.models.exterior import AlarmStatus, CarAlarmStatus
 from polestar_api.models.common import Timestamp, Weekday
 from polestar_api.models.parking_climate_timer import ParkingClimateTimer
 
@@ -233,6 +233,32 @@ def precleaning_attributes(precleaning: Any) -> dict[str, Any]:
     return attrs
 
 
+def _stamp(value: Any) -> str | None:
+    seconds = getattr(value, "seconds", 0) if value is not None else 0
+    return datetime.fromtimestamp(seconds, tz=dt_util.UTC).isoformat() if seconds else None
+
+
+def air_purification_attributes(precleaning: Any) -> dict[str, Any]:
+    """Attributes for Air purification last cycle: when it started, when the air was measured and what it read.
+
+    ``air_quality_index`` is the car's own index (field 9); the Air quality sensor shows PM2.5 (field 10).
+    """
+    if precleaning is None:
+        return {}
+    attrs: dict[str, Any] = {}
+    for name, key in (("started_at", "started_at"), ("measured_at", "measurement_date")):
+        stamp = _stamp(getattr(precleaning, key, None))
+        if stamp:
+            attrs[name] = stamp
+    if getattr(precleaning, "measured_air_quality_index", 0):
+        attrs["air_quality_index"] = precleaning.measured_air_quality_index
+    if getattr(precleaning, "measured_particulate_matter_2_5", 0):
+        attrs["pm2_5"] = precleaning.measured_particulate_matter_2_5
+    if getattr(precleaning, "last_cycle_completed", None) is not None:
+        attrs["last_cycle_valid"] = bool(getattr(precleaning, "last_cycle_valid", False))
+    return attrs
+
+
 def weather_attributes(weather: Any) -> dict[str, Any]:
     """When the weather service says the outside temperature was taken (it is a lookup at the car's location)."""
     millis = getattr(weather, "timestamp_epoch_millis", 0) if weather else 0
@@ -366,10 +392,11 @@ def poll_is_active(data: Any) -> bool:
 
 
 def alarm_triggered(exterior: Any) -> bool | None:
-    """True when any door, the hood or the tailgate reports a triggered alarm.
+    """True when the car's alarm is triggered.
 
-    The car reports the alarm per closure and the Polestar 2 sends none, so a car that has reported its doors but says
-    nothing about an alarm counts as not triggered (shown as OK). None only before any exterior data has arrived.
+    Current cars send one alarm state for the whole car (exterior field 15: IDLE or TRIGGERED; a Polestar 2 sends
+    IDLE). Older replies carried a state per door, hood and tailgate, which still counts. A car that has reported its
+    exterior but says nothing about an alarm counts as not triggered (shown as OK). None only before any exterior data.
     """
     if exterior is None:
         return None
@@ -381,6 +408,9 @@ def alarm_triggered(exterior: Any) -> bool | None:
     if exterior.tailgate is not None:
         parts.append(exterior.tailgate.status)
     states = [p.alarm_status for p in parts if p is not None and p.alarm_status != AlarmStatus.UNSPECIFIED]
+    # The car's own alarm (exterior field 15), which current cars send instead of a state per closure.
+    if getattr(exterior, "alarm", None) == CarAlarmStatus.TRIGGERED:
+        return True
     return any(state == AlarmStatus.TRIGGERED for state in states)
 
 
