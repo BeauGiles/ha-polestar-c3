@@ -58,6 +58,7 @@ from .services.weather import WeatherServiceClient
 
 if TYPE_CHECKING:
     from .connection import GrpcConnection
+    from .models.car_information import ParkingClimatizationCapabilities
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -149,6 +150,8 @@ class Vehicle:
         self.supports_rear_seat_heating: bool | None = None
         self.max_climate_timers: int | None = None
         self.steering_wheel_heat_levels: int | None = None
+        # The car record's parking climate block as received, for diagnostics.
+        self.parking_climate_capabilities: ParkingClimatizationCapabilities | None = None
 
         self._amp_limit = AmpLimitServiceClient(connection, vin)
         self._availability = AvailabilityServiceClient(connection, vin)
@@ -198,6 +201,7 @@ class Vehicle:
             presets = car.charging.target_charge_level_settings.supports_target_charge_level_presets
             self.supports_target_soc_presets = bool(presets)
         if car is not None and car.parking_climatization is not None:
+            self.parking_climate_capabilities = car.parking_climatization
             self.supports_rear_seat_heating = bool(car.parking_climatization.supports_rear_seats_settings)
             timers = car.parking_climatization.timers
             self.max_climate_timers = timers.max_number if timers is not None else 0

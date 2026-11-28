@@ -89,6 +89,10 @@ def _coordinator_diagnostics(coordinator: PolestarCoordinator) -> dict[str, Any]
     return {
         "model_name": coordinator.vehicle.model_name,
         "model_year": coordinator.vehicle.model_year,
+        "parking_climate_capabilities": _serialize(
+            getattr(coordinator.vehicle, "parking_climate_capabilities", None)
+        ),
+        "steering_wheel_heat_levels": getattr(coordinator.vehicle, "steering_wheel_heat_levels", None),
         "update_interval_seconds": (
             coordinator.update_interval.total_seconds()
             if coordinator.update_interval is not None

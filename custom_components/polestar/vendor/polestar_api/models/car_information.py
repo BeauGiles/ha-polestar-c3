@@ -120,16 +120,28 @@ class ParkingClimatizationTimers(ProtoMessage, schema={7: "max_number"}):
 
 @dataclass(frozen=True)
 class ParkingClimatizationCapabilities(ProtoMessage, schema={
+    8: "supports_front_seats_settings",
     9: "supports_rear_seats_settings",
+    10: "supports_steering_wheel_settings",
+    11: "front_seats_setting_levels",
     13: "timers",
+    15: "rear_seats_setting_levels",
     16: "steering_wheel_setting_levels",
 }):
-    """What the car supports for parking climate: rear seat heating, how many timers, and the
-    number of steering wheel heat levels besides off (0 when the car does not send it;
-    field 16 found by ericyew)."""
+    """What the car lets the app set for parking climate (mdapi ParkingClimatization).
 
+    The supports_* flags say whether each setting can be changed remotely; the *_levels fields
+    give the number of heat levels besides off (0 when the car does not send it). Field 16 was
+    found by ericyew; the rest come from the Volvo app's proto, which Volvo C3 already reads
+    from the JSON car record.
+    """
+
+    supports_front_seats_settings: bool = False
     supports_rear_seats_settings: bool = False
+    supports_steering_wheel_settings: bool = False
+    front_seats_setting_levels: int = 0
     timers: ParkingClimatizationTimers | None = None
+    rear_seats_setting_levels: int = 0
     steering_wheel_setting_levels: int = 0
 
 
