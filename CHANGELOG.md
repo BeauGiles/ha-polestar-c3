@@ -45,6 +45,10 @@ Dates are 2026.
 
 ### Fixed
 
+- **Diagnostics are easier to read:**
+  - The API call rate is only worked out after the first hour. Before that it multiplied the startup burst (every read once) out to a day, showing about 16,000 calls a day. A new `minutes_counted` shows how long the count covers.
+  - Negative numbers from the backend are no longer read as huge positive ones. For example, the OTA schedule's `relative_time` is now -2 (nothing scheduled) instead of 18446744073709551614.
+  - The car's `reports_light_warnings` list shows as numbers instead of a Python bytes string.
 - **The alarm sensor now sees a triggered alarm.** The car reports its alarm in a field of the exterior reply that the integration skipped (15), so Alarm triggered could never turn on, even while the app showed the alarm and sent a notification. It now reads that field, and still checks the per-door alarm states as before. Both cars report `IDLE` when parked. Matches Volvo C3.
 - **The charge current slider follows the car's own range.** The car record says which currents the car accepts: 6–32 A on an Australian Polestar 2, up to 48 A in North America. The slider was fixed at 6–32 A. The charge location actions now accept up to 80 A and check the value against the car's maximum.
 - **Average speed sensors come back.** Polestar removed the dashboard service the average speeds came from (it now answers "Method not found"), so both sensors stayed hidden. The odometer reply carries the same two values (fields 5 and 6), and the sensors now fall back to it.

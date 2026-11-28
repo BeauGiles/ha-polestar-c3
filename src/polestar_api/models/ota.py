@@ -85,7 +85,7 @@ class Scheduler(ProtoMessage, schema={
     5: "set_by",
 }):
     status: ScheduleStatus = ScheduleStatus.UNKNOWN
-    relative_time: int = 0
+    relative_time: int = 0  # seconds from now; -2 when nothing is scheduled
     scheduled_time: Timestamp | None = None
     software_id: str = ""
     set_by: ScheduleSetBy = ScheduleSetBy.UNKNOWN
