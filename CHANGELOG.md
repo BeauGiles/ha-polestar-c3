@@ -6,6 +6,10 @@ Dates are 2026.
 
 ## Unreleased
 
+### Changed
+
+- **The trip sensors say which trip they follow.** The car sends these for the trip meter you reset yourself, so they're now called Trip meter (manual trip), Average speed (trip) and Average consumption (trip), next to Trip meter (auto) and Average speed (auto). Only the display names change: entity IDs, history and automations stay the same. Matches Volvo C3.
+
 ## 0.6.0 (28 November)
 
 ### Added
