@@ -327,6 +327,36 @@ async def test_the_cars_lowest_target_charge_level_is_read(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("charging", "expected"),
+    [
+        # A Polestar 2 with a Plug & Charge contract: its record carries a PCID (28 Nov 2026 dump).
+        (encode({"pcid": (20, "string")}, {"pcid": "DEMOPCID0000000000"}), True),
+        (encode({"flag": (29, "bool")}, {"flag": True}), True),
+        # An XC40 has neither.
+        (encode({"max": (16, "int32")}, {"max": 20}), False),
+    ],
+)
+async def test_plug_and_charge_is_read_from_the_car_record(monkeypatch, charging, expected):
+    vehicle = _vehicle(monkeypatch, _response(_capable_car(charging=charging)))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.supports_plug_and_charge is expected
+    assert "DEMOPCID" not in repr(vehicle.car_capabilities)  # only in its own attribute, not the generic dump
+    assert vehicle.plug_and_charge_pcid == ("DEMOPCID0000000000" if b"DEMOPCID" in charging else None)
+
+
+@pytest.mark.asyncio
+async def test_plug_and_charge_unknown_without_a_charging_block(monkeypatch):
+    vehicle = _vehicle(monkeypatch, _response(_capable_car()))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.supports_plug_and_charge is None
+
+
+@pytest.mark.asyncio
 async def test_no_lowest_target_charge_level_when_the_car_reports_zero(monkeypatch):
     charging = encode_message(8, encode({"presets": (3, "bool")}, {"presets": True}))
     vehicle = _vehicle(monkeypatch, _response(_capable_car(charging=charging)))

@@ -809,6 +809,9 @@ class PolestarVehicleInfoSensor(PolestarEntity, SensorEntity):
             "digital_key_type": v.digital_key_type,
             "has_performance_software_upgrade": v.has_performance_software_upgrade,
             "supports_engine_start": v.supports_engine_start,
+            # From the car record (has a Plug & Charge contract ID). Can't be switched on or off remotely.
+            "plug_and_charge_ready": getattr(v, "supports_plug_and_charge", None),
+            "plug_and_charge_pcid": getattr(v, "plug_and_charge_pcid", None),  # as the app shows it
             **flatten_attributes(
                 {
                     "app": {

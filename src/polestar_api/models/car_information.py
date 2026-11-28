@@ -106,6 +106,8 @@ class TargetChargeLevelSettings(ProtoMessage, schema={
 class ChargingCapabilities(ProtoMessage, schema={
     8: "target_charge_level_settings",
     16: "max_number_of_locations",
+    20: "plug_and_charge_pcid",
+    29: "supports_plug_and_charge",
 }):
     """What the car supports for charging.
 
@@ -115,6 +117,9 @@ class ChargingCapabilities(ProtoMessage, schema={
 
     target_charge_level_settings: TargetChargeLevelSettings | None = None
     max_number_of_locations: int = 0
+    # Plug & Charge contract certificate ID: only a car set up for Plug & Charge has one.
+    plug_and_charge_pcid: str = ""
+    supports_plug_and_charge: bool = False
 
 
 @dataclass(frozen=True)

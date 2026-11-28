@@ -64,13 +64,18 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
+# Identifiers left out of the generic capability dump, which ends up in sensor attributes and diagnostics.
+# The PCID has its own attribute instead, which diagnostics redact.
+_PRIVATE_FIELDS = frozenset({"vin", "plug_and_charge_pcid"})
+
+
 def _non_default_fields(obj: object) -> dict:
-    """Every field of a decoded message that differs from its empty value, as plain data (no VIN)."""
+    """Every field of a decoded message that differs from its empty value, as plain data (no VIN or PCID)."""
     from enum import IntEnum
 
     result: dict = {}
     for name, value in vars(obj).items():
-        if name.startswith("_") or name == "vin":
+        if name.startswith("_") or name in _PRIVATE_FIELDS:
             continue
         if hasattr(value, "__dict__") and not isinstance(value, IntEnum):
             nested = _non_default_fields(value)
@@ -144,6 +149,11 @@ class Vehicle:
         self.supports_sunroof_control: bool | None = None
         self.supports_reduced_alarm_lock: bool | None = None
         self.supports_target_soc_presets: bool | None = None
+        # Whether the car is set up for Plug & Charge (it has a contract ID, or says it supports it).
+        # None until the car record is read. Read-only: the on/off service answers NOT_FOUND for a Polestar 2.
+        self.supports_plug_and_charge: bool | None = None
+        # The Plug & Charge contract certificate ID (PCID), as the app shows it. None when the car has none.
+        self.plug_and_charge_pcid: str | None = None
         # Lowest target charge level the car accepts (40 % on a Polestar 2); None when the car doesn't say.
         self.target_soc_min: int | None = None
         self.reports_avg_consumption: bool | None = None
@@ -195,6 +205,10 @@ class Vehicle:
         car = my_car.car
         if car is not None and car.charging is not None:
             self.supports_charge_locations = car.charging.max_number_of_locations > 0
+            self.supports_plug_and_charge = bool(
+                car.charging.plug_and_charge_pcid or car.charging.supports_plug_and_charge
+            )
+            self.plug_and_charge_pcid = car.charging.plug_and_charge_pcid or None
         if car is not None:
             self.reports_avg_consumption = bool(car.reports_avg_electric_consumption)
             self.reports_avg_consumption_auto = bool(car.reports_avg_electric_consumption_last_trip)

@@ -8,6 +8,7 @@ Dates are 2026.
 
 ### Added
 
+- **Vehicle info shows whether the car is set up for Plug & Charge.** A new `plug_and_charge_ready` attribute on the Vehicle info sensor comes from the car record: true when the car has a Plug & Charge contract ID. `plug_and_charge_pcid` shows the contract ID, as the Polestar app does. Both are read-only, because Polestar's backend doesn't offer a remote on/off for a Polestar 2. Diagnostics redact the ID.
 - **Diagnostics show what the car lets the app set for parking climate.** These are the car record's flags for front seat, rear seat and steering wheel settings, the number of heat levels for each, and the steering wheel level count the select uses. The field numbers come from the Volvo app's proto: 8, 9, 10, 11, 15 and 16. Nothing changes in which entities appear. The Polestar 2 still has no climate seat, steering wheel or temperature settings, which matches the Polestar app, where it can only set these in the car.
 
 ### Fixed
