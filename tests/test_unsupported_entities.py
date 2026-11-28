@@ -452,6 +452,19 @@ def test_polestar_4_detection(monkeypatch):
     assert not utils.is_polestar_4("", "LPSVSEDB4NL000001")
 
 
+def test_steering_wheel_on_off_follows_reported_levels(monkeypatch):
+    _load(monkeypatch, FakeRegistry())
+    utils = sys.modules["_polestar_unsupported_under_test.utils"]
+
+    # The car's reported level count wins over the model guess.
+    assert utils.steering_wheel_is_on_off(1, "Polestar 2", "YSMFD3KA0RL000001")
+    assert not utils.steering_wheel_is_on_off(3, "Polestar 4", "YSM4ZPBA1SF419419")
+    # Not reported: fall back to the Polestar 4 guess.
+    assert utils.steering_wheel_is_on_off(None, "Polestar 4", "ANYVIN")
+    assert utils.steering_wheel_is_on_off(None, None, "YSM4ZPBA1SF419419")
+    assert not utils.steering_wheel_is_on_off(None, "Polestar 2", "YSMFD3KA0RL000001")
+
+
 def test_steering_wheel_heating_is_on_off(monkeypatch):
     _load(monkeypatch, FakeRegistry())
     utils = sys.modules["_polestar_unsupported_under_test.utils"]

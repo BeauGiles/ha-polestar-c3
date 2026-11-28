@@ -4,6 +4,13 @@ All notable changes to Polestar C3 (domain `polestar`), the Home Assistant integ
 
 Dates are 2026.
 
+## Unreleased
+
+### Fixed
+
+- **Start charging and Stop charging report the car's answer correctly.** The reply carries its status in field 1, but the integration looked for it inside a field-3 envelope, so it read every reply as undefined and the command could show as failed even when the car accepted it. Only SUCCESS now counts as success; a validation, internal or not-found error is reported as a failure. From ericyew ([67952fd](https://github.com/ericyew/unofficial-polestar-api/commit/67952fdf5d5bf453d52fc3a7a992b613c288598b)), originally upstream v0.4.0.
+- **Steering wheel heating options follow what the car reports.** The car record says how many steering wheel heat levels it has (parking climate field 16). When it says one, the select offers only Off and Level 3, on any model. When the car record isn't available, it still falls back to treating a Polestar 4 as on/off. From ericyew ([4d3f4bf](https://github.com/ericyew/unofficial-polestar-api/commit/4d3f4bf1d2f97e2e2e3f16598285de4b9268d683)).
+
 ## 0.5.1 (27 November)
 
 ### Added

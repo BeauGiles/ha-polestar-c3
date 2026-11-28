@@ -157,8 +157,20 @@ def is_polestar_4(model_name: str | None, vin: str) -> bool:
     return vin.upper().startswith("YSM4")
 
 
+def steering_wheel_is_on_off(heat_levels: int | None, model_name: str | None, vin: str) -> bool:
+    """Return True when the steering wheel heating has one level (on/off).
+
+    Uses the number of heat levels the car reports in its car information. When the
+    car did not report it (car information unavailable), falls back to guessing a
+    Polestar 4 from the model name or VIN.
+    """
+    if heat_levels:
+        return heat_levels == 1
+    return is_polestar_4(model_name, vin)
+
+
 def normalise_steering_wheel_option(option: str) -> str:
-    """Steering wheel heating is on/off on a Polestar 4: the car runs any heated level as level3."""
+    """On a car with one steering wheel heat level, any heated level runs as level3."""
     return "level3" if option in ("level1", "level2") else option
 
 
