@@ -143,6 +143,8 @@ class Vehicle:
         self.supports_sunroof_control: bool | None = None
         self.supports_reduced_alarm_lock: bool | None = None
         self.supports_target_soc_presets: bool | None = None
+        # Lowest target charge level the car accepts (40 % on a Polestar 2); None when the car doesn't say.
+        self.target_soc_min: int | None = None
         self.reports_avg_consumption: bool | None = None
         self.reports_avg_consumption_auto: bool | None = None
         self.reports_avg_consumption_since_charge: bool | None = None
@@ -195,8 +197,9 @@ class Vehicle:
             self.reports_avg_consumption_auto = bool(car.reports_avg_electric_consumption_last_trip)
             self.reports_avg_consumption_since_charge = bool(car.reports_avg_electric_consumption_last_charge)
         if car is not None and car.charging is not None and car.charging.target_charge_level_settings is not None:
-            presets = car.charging.target_charge_level_settings.supports_target_charge_level_presets
-            self.supports_target_soc_presets = bool(presets)
+            settings = car.charging.target_charge_level_settings
+            self.supports_target_soc_presets = bool(settings.supports_target_charge_level_presets)
+            self.target_soc_min = settings.percentage_min_limit or None
         if car is not None and car.parking_climatization is not None:
             self.supports_rear_seat_heating = bool(car.parking_climatization.supports_rear_seats_settings)
             timers = car.parking_climatization.timers

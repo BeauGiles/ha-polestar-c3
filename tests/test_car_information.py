@@ -311,6 +311,29 @@ async def test_target_charge_presets_unknown_without_a_settings_block(monkeypatc
     await vehicle.async_load_car_information()
 
     assert vehicle.supports_target_soc_presets is None
+    assert vehicle.target_soc_min is None
+
+
+@pytest.mark.asyncio
+async def test_the_cars_lowest_target_charge_level_is_read(monkeypatch):
+    # A Polestar 2 reports 40 % in its car record (28 Nov 2026 dump).
+    charging = encode_message(8, encode({"min": (2, "int32"), "presets": (3, "bool")}, {"min": 40, "presets": True}))
+    vehicle = _vehicle(monkeypatch, _response(_capable_car(charging=charging)))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.target_soc_min == 40
+    assert vehicle.supports_target_soc_presets is True
+
+
+@pytest.mark.asyncio
+async def test_no_lowest_target_charge_level_when_the_car_reports_zero(monkeypatch):
+    charging = encode_message(8, encode({"presets": (3, "bool")}, {"presets": True}))
+    vehicle = _vehicle(monkeypatch, _response(_capable_car(charging=charging)))
+
+    await vehicle.async_load_car_information()
+
+    assert vehicle.target_soc_min is None
 
 
 @pytest.mark.asyncio

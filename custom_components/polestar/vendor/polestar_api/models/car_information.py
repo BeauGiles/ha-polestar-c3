@@ -92,9 +92,13 @@ class DigitalKey(ProtoMessage, schema={1: "type"}):
 
 
 @dataclass(frozen=True)
-class TargetChargeLevelSettings(ProtoMessage, schema={3: "supports_target_charge_level_presets"}):
-    """Whether the app offers the daily / long drive target charge level presets."""
+class TargetChargeLevelSettings(ProtoMessage, schema={
+    2: "percentage_min_limit",
+    3: "supports_target_charge_level_presets",
+}):
+    """The lowest target charge level the car accepts, and whether the app offers the daily / long drive presets."""
 
+    percentage_min_limit: int = 0
     supports_target_charge_level_presets: bool = False
 
 
