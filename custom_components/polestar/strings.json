@@ -3,15 +3,17 @@
     "step": {
       "init": {
         "data": {
-          "update_interval": "Polling interval (seconds)",
-          "registration_plate": "Registration plate (optional)",
-          "active_interval": "Active polling interval (seconds)"
+          "update_interval": "Idle poll interval (seconds)",
+          "active_interval": "Active poll interval (seconds)",
+          "registration_plate": "Registration plate (optional)"
         },
-        "description": "How often to poll the Polestar cloud for updates. Lower values give faster updates but may increase server load and 12v battery usage.",
+        "description": "How often to ask Polestar for updates. Live updates bring most changes as they happen; polling fills in the rest. Idle is used while the car is parked; Active while it is charging, being driven or running its climate, and for 5 minutes after a trip. Polling reads Polestar's cloud copy of the car, so it doesn't wake the car.",
         "data_description": {
-          "registration_plate": "Shown in the device name. Only needed when Polestar does not supply the plate for your account, for example a secondary or guest login. Leave blank to use the plate Polestar reports.",
-          "active_interval": "Used while the car is charging, being driven or running its climate, and for 5 minutes after a trip. Between 30 and 3600; never slower than the polling interval."
-        }
+          "update_interval": "Default 600 (10 minutes). Between 60 and 86400.",
+          "active_interval": "Default 120 (2 minutes). Between 30 and 3600. Never slower than the idle interval.",
+          "registration_plate": "Shown in the device name. Only needed when Polestar does not supply the plate for your account, for example a secondary or guest login. Leave blank to use the plate Polestar reports."
+        },
+        "title": "Polestar C3 options"
       }
     }
   },
