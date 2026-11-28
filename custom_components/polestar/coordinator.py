@@ -21,6 +21,7 @@ from polestar_api.exceptions import AuthError, TokenExpiredError, is_unsupported
 from polestar_api.models.availability import Availability
 from polestar_api.models.battery import Battery
 from polestar_api.models.charge_location import ChargeLocation
+from polestar_api.models.chronos_errors import ChargeNowState, ChronosErrors
 from polestar_api.models.locks import LockAlarmLevel
 from polestar_api.models.charging import (
     AmpLimitResponse,
@@ -186,6 +187,9 @@ class PolestarVehicleData:
     current_charge_location: dict[str, Any] | None = None
     climate_timers: list[ParkingClimateTimer] = field(default_factory=list)
     climate_timer_settings: ParkingClimateTimerSettings | None = None
+    charge_now: ChargeNowState | None = None
+    # The last charging or climate timer error the car reported (live stream only; None until one happens).
+    charging_error: ChronosErrors | None = None
 
 
 _FETCH_ATTRS: tuple[tuple[str, str], ...] = (
@@ -210,7 +214,12 @@ _FETCH_ATTRS: tuple[tuple[str, str], ...] = (
     ("current_charge_location", "is_at_charge_location"),
     ("climate_timers", "get_climate_timers"),
     ("climate_timer_settings", "get_climate_timer_settings"),
+    ("charge_now", "get_charge_now_state"),
 )
+# Streams that are silent while all is well (the error stream): no data for hours is normal, not a dead stream.
+_QUIET_STREAMS = frozenset({"charging_error"})
+# Re-read the car record this often, so a new software install time (and any changed limits) shows up.
+_CAR_RECORD_REFRESH_SECONDS = 6 * 3600
 _FETCH_ATTR_LOOKUP = dict(_FETCH_ATTRS)
 _ATTR_FIELDS = {spec.name: spec for spec in fields(PolestarVehicleData)}
 
@@ -272,6 +281,8 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         )
         self._post_trip_until = 0.0
         self._was_driving = False
+        self._car_record_read_at = time.monotonic()  # read at setup, before the coordinator exists
+        self._last_software_state: SoftwareState | None = None
         self.climate_preferences = ClimateCommandPreferences()
         # Seeded from the car record; real OTA info replaces it when the backend has some.
         self._installed_version_cache: str | None = getattr(vehicle, "installed_software_version", None) or None
@@ -619,7 +630,29 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         self._unsupported_commands.clear()
         self._adapt_poll_interval(data)
         await self._restart_dead_streams()
+        await self._maybe_reread_car_record(data)
         return data
+
+    async def _maybe_reread_car_record(self, data: PolestarVehicleData) -> None:
+        """Re-read the car record every 6 hours, and right after an OTA install completes.
+
+        The car record holds the software install time (shown on the update entity) and the car's limits. It used
+        to be read only at setup.
+        """
+        state = data.software.state if data.software is not None else None
+        just_installed = (
+            state is SoftwareState.INSTALLATION_COMPLETED
+            and getattr(self, "_last_software_state", None) not in (None, SoftwareState.INSTALLATION_COMPLETED)
+        )
+        if state is not None:
+            self._last_software_state = state
+        now = time.monotonic()
+        if not just_installed and now - getattr(self, "_car_record_read_at", now) < _CAR_RECORD_REFRESH_SECONDS:
+            return
+        self._car_record_read_at = now
+        load = getattr(self.vehicle, "async_load_car_information", None)
+        if load is not None:
+            await load()  # keeps the previous values when the read fails
 
     def _adapt_poll_interval(self, data: PolestarVehicleData | None) -> bool:
         """Poll faster while charging, driving or the climate runs, and for 5 minutes after a trip.
@@ -716,6 +749,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
         "exterior": "stream_exterior",
         "precleaning": "stream_precleaning",
         "odometer": "stream_odometer",
+        "charging_error": "stream_charging_errors",
     }
 
     async def async_start_streams(self) -> None:
@@ -775,7 +809,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
                 last_data = self._stream_last_data.get(attr)
                 # A task that has never yielded may just be a slow first message;
                 # only resubscribe when a previously working stream went quiet.
-                if stale_after is None or last_data is None or now - last_data < stale_after:
+                if attr in _QUIET_STREAMS or stale_after is None or last_data is None or now - last_data < stale_after:
                     continue
                 _LOGGER.warning(
                     "Live %s stream for %s delivered nothing for %.0fs, resubscribing",
@@ -840,6 +874,10 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
                     wait = STREAM_MIN_RESUBSCRIBE_INTERVAL - (time.monotonic() - subscribed_at)
                     if wait > 0:
                         await asyncio.sleep(wait)
+                    continue
+                if attr in _QUIET_STREAMS and time.monotonic() - subscribed_at >= STREAM_MIN_RESUBSCRIBE_INTERVAL:
+                    # A silent stream the server closed after a while: nothing went wrong, resubscribe.
+                    consecutive_failures = 0
                     continue
                 # Ended without an error and without a single message: back off,
                 # otherwise this becomes an unbounded reconnect loop.
@@ -1120,7 +1158,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
             error_message="Start charging command failed",
             capability="charging",
         )
-        self._schedule_background_refresh("battery")
+        self._schedule_background_refresh("battery", "charge_now")
         return response
 
     async def async_stop_charging(self) -> int:
@@ -1130,7 +1168,7 @@ class PolestarCoordinator(DataUpdateCoordinator[PolestarVehicleData]):
             error_message="Stop charging command failed",
             capability="charging",
         )
-        self._schedule_background_refresh("battery")
+        self._schedule_background_refresh("battery", "charge_now")
         return response
 
     async def async_open_windows(self) -> Any:

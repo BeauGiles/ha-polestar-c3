@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING
 
 from .. import grpc as grpc_call
 from ..codec import decode
+from ..models.chronos_errors import ChargeNowState
 from ..models.common import ResponseStatusCode
 from .chronos import wrap_chronos
 
 _CHARGE_NOW_SUCCESS = 1  # chronos ResponseStatus.SUCCESS
+_STATE_TIMEOUT = 10.0  # the state is a server stream: its first message is the current state
 
 if TYPE_CHECKING:
     from ..connection import GrpcConnection
@@ -51,3 +54,25 @@ class ChargeNowServiceClient:
     async def stop(self) -> int:
         """Stop charge now override. Returns status code."""
         return await self._call("StopOverrideChargeTimer")
+
+    async def get_state(self) -> ChargeNowState | None:
+        """Whether charge now is overriding the charge timer, and which button the app offers.
+
+        Read from the server stream the app uses (``GetEnabledOverrideChargeTimerActionStream``): its first message
+        is the current state. None when nothing arrives in time.
+        """
+        metadata = await self._connection.get_metadata(self._vin)
+        metadata["vin"] = self._vin
+        data = None
+        try:
+            async with asyncio.timeout(_STATE_TIMEOUT):
+                async for data in grpc_call.unary_stream(
+                    self._connection.channel, f"{self._svc}/GetEnabledOverrideChargeTimerActionStream",
+                    wrap_chronos(self._vin), metadata=metadata,
+                ):
+                    break
+        except TimeoutError:
+            pass
+        if not data:
+            return None
+        return ChargeNowState.from_bytes(data)

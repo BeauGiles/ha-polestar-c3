@@ -7,6 +7,7 @@ from enum import IntEnum
 from typing import Annotated
 
 from ..wire import Float32, ProtoMessage
+from .common import Timestamp
 
 
 class EngineType(IntEnum):
@@ -240,6 +241,7 @@ class CarDetails(ProtoMessage, schema={
     49: "reports_avg_electric_consumption_last_charge",
     50: "reports_tyre_pressure_in_kpa",
     87: "reports_service_warning",
+    92: "software_installed_at",
 }):
     """Identity of a car. ``vehicle_type_name`` is the model name, e.g. ``Polestar 4``."""
 
@@ -272,6 +274,10 @@ class CarDetails(ProtoMessage, schema={
     supports_full_ota_updates: bool = False
     # The light types the car can warn about, packed as C3 enum numbers. Only "is it empty" matters here.
     reports_light_warnings: bytes = b""
+    # Not named in either app (5.15.1, Volvo 7.6.0). An XC40 sends it about 47 s after its last OTA install finished
+    # (28 Nov 2026), so it's taken to be when the current software was installed. A Polestar 2 that has never had an
+    # OTA doesn't send it.
+    software_installed_at: Timestamp | None = None
 
 
 @dataclass(frozen=True)

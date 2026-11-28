@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import html
+import re
 from datetime import UTC, datetime, time as dt_time
 from enum import IntEnum
 from typing import Any
@@ -570,3 +572,21 @@ def service_plan_attributes(plan: dict[str, Any] | None) -> dict[str, Any]:
     if others:
         out["other_plans"] = ", ".join(others)
     return out
+
+
+def release_notes(text: str | None) -> str | None:
+    """The app's release notes as plain Markdown (same converter as Volvo C3).
+
+    The backend sends them in its own markup: ``<textblock>`` paragraphs, ``<linefeed/>`` line breaks and
+    sometimes ``<bullet>`` items. Anything else is dropped as a tag; the words are kept.
+    """
+    if not text:
+        return None
+    out = re.sub(r"<linefeed\s*/>", "\n", text)
+    out = re.sub(r"<bullet[^>]*>", "\n- ", out)
+    out = re.sub(r"</textblock>", "\n\n", out)
+    out = re.sub(r"<[^>]+>", "", out)
+    out = html.unescape(out)
+    lines = [line.strip() for line in out.splitlines()]
+    out = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+    return out or None

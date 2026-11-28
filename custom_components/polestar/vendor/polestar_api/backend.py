@@ -31,6 +31,7 @@ class BackendProfile:
     # chronos
     charge_location_svc: str = "/chronos.services.v1.ChargeLocationService"
     charge_now_svc: str = "/chronos.services.v1.ChargeNowService"
+    error_svc: str = "/chronos.services.v1.ErrorService"
     parking_climate_timer_svc: str = "/chronos.services.v1.ParkingClimateTimerService"
     target_soc_svc: str = "/chronos.services.v1.TargetSocService"
     amp_limit_svc: str = "/chronos.services.v1.AmpLimitService"

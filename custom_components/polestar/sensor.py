@@ -182,6 +182,18 @@ class PolestarSensorDescription(SensorEntityDescription):
     requires_combustion_engine: bool = False
 
 
+def _charging_error_attributes(errors: Any) -> dict[str, Any]:
+    """What failed and why, e.g. {"setting": "charge_now", "error": "car", "action": "start_override_charge_timer"}."""
+    detail = errors.detail if errors is not None else None
+    if detail is None:
+        return {}
+    attrs = {"setting": errors.domain, "error": detail.error.name.lower()}
+    action = getattr(detail, "action", None)
+    if action is not None and int(action):
+        attrs["action"] = action.name.lower()
+    return attrs
+
+
 def _dashboard_value(data: PolestarVehicleData, field: str) -> float | None:
     """A reading from the dashboard record, or None when the car sends none (zero means "not sent")."""
     dash = data.dashboard.dashboard_data if data.dashboard else None
@@ -503,6 +515,20 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
         value_fn=lambda d: d.health.rear_right_tyre_pressure_kpa if d.health else None,
     ),
     PolestarSensorDescription(
+        key="charging_error",
+        translation_key="charging_error",
+        icon="mdi:ev-plug-type2",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.TIMESTAMP,
+        # Live only: the error stream is silent until the car can't apply a charging or climate timer change.
+        value_fn=lambda d: _timestamp_or_none(
+            d.charging_error.error_time.seconds
+            if d.charging_error and d.charging_error.error_time and d.charging_error.error_time.seconds
+            else None
+        ),
+        attrs_fn=lambda d: _charging_error_attributes(d.charging_error),
+    ),
+    PolestarSensorDescription(
         key="air_purification_last_cycle",
         fetch_attr="precleaning",
         translation_key="air_purification_last_cycle",
@@ -707,6 +733,8 @@ class PolestarVinSensor(PolestarEntity, SensorEntity):
             "build_week": _build_week(v.structure_week),
             "powertrain": v.engine_type,
             "drivetrain": v.drivetrain_type,
+            # The type code from the car record: 534 = Polestar 2, 536 = XC40 / EX40.
+            "vehicle_type_code": getattr(v, "vehicle_type_code", None),
         }
         if plate:
             attrs["registration_plate"] = plate

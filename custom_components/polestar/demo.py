@@ -22,6 +22,7 @@ from polestar_api.models.battery import (
     ChargingType,
 )
 from polestar_api.models.charge_location import ChargeLocation, ChargeLocationType, OptimisedChargingType
+from polestar_api.models.chronos_errors import ChargeNowState, EnabledOverrideChargeTimerAction, OverrideChargeTimerState
 from polestar_api.models.charging import (
     AmpLimitResponse,
     BatteryChargeTimer,
@@ -441,6 +442,17 @@ class DemoVehicle:
     async def stop_climate(self) -> None:
         _LOGGER.info("Demo: stop climate")
         self._climate_on = False
+
+    async def get_charge_now_state(self) -> ChargeNowState:
+        if self._charging:
+            return ChargeNowState(
+                status=1, enabled_action=EnabledOverrideChargeTimerAction.RESUME_SCHEDULE,
+                state=OverrideChargeTimerState.OVERRIDE_ACTIVE,
+            )
+        return ChargeNowState(
+            status=1, enabled_action=EnabledOverrideChargeTimerAction.CHARGE_NOW,
+            state=OverrideChargeTimerState.OVERRIDE_NOT_ACTIVE,
+        )
 
     async def start_charging(self) -> int:
         _LOGGER.info("Demo: start charging")

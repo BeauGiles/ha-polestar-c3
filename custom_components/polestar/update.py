@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from homeassistant.components.update import (
     UpdateDeviceClass,
     UpdateEntity,
@@ -18,9 +20,16 @@ from .const import DOMAIN
 from .coordinator import PolestarCoordinator
 from .entity import PolestarEntity
 from polestar_api.models.ota import SoftwareState
-from .utils import enum_name, timestamp_to_iso
+from .utils import enum_name, release_notes, timestamp_to_iso
 
 PARALLEL_UPDATES = 1
+
+
+def _installed_at(seconds: int | None) -> str | None:
+    """Epoch seconds from the car record as an ISO time, or None."""
+    if not seconds:
+        return None
+    return datetime.fromtimestamp(seconds, tz=UTC).isoformat()
 
 _IN_PROGRESS_STATES = {
     SoftwareState.DOWNLOAD_STARTED,
@@ -51,7 +60,7 @@ class PolestarOtaUpdate(PolestarEntity, UpdateEntity, RestoreEntity):
 
     _attr_device_class = UpdateDeviceClass.FIRMWARE
     _attr_translation_key = "software_update"
-    _attr_supported_features = UpdateEntityFeature.INSTALL
+    _attr_supported_features = UpdateEntityFeature.INSTALL | UpdateEntityFeature.RELEASE_NOTES
 
     @property
     def entity_picture(self) -> str | None:
@@ -119,10 +128,16 @@ class PolestarOtaUpdate(PolestarEntity, UpdateEntity, RestoreEntity):
         software = self.coordinator.data.software if self.coordinator.data else None
         if software is None or software.description is None:
             return None
-        parts = [part for part in (software.description.short_desc, software.description.long_desc) if part]
-        if not parts:
+        # The short description only: the full notes are under "Release notes" (Home Assistant caps this at 255).
+        summary = release_notes(software.description.short_desc)
+        return summary[:255] if summary else None
+
+    async def async_release_notes(self) -> str | None:
+        """The full release notes the app shows, converted from the backend's markup."""
+        software = self.coordinator.data.software if self.coordinator.data else None
+        if software is None or software.description is None:
             return None
-        return "\n\n".join(parts)
+        return release_notes(software.description.long_desc) or release_notes(software.description.short_desc)
 
     @property
     def extra_state_attributes(self) -> dict[str, str | None]:
@@ -136,6 +151,8 @@ class PolestarOtaUpdate(PolestarEntity, UpdateEntity, RestoreEntity):
             "scheduler_status": enum_name(schedule.status) if schedule else None,
             "scheduler_scheduled_time": timestamp_to_iso(schedule.scheduled_time) if schedule else None,
             "scheduler_set_by": enum_name(schedule.set_by) if schedule else None,
+            # When the current software was installed (car record field 92). Not sent before a car's first OTA.
+            "installed_at": _installed_at(getattr(self._vehicle, "software_installed_at", None)),
         }
 
     async def async_install(
