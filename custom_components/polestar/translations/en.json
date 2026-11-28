@@ -265,7 +265,7 @@
         "name": "Air purification last cycle"
       },
       "air_quality_index": {
-        "name": "Cabin air quality index"
+        "name": "Cabin PM2.5"
       },
       "altitude": {
         "name": "Altitude"

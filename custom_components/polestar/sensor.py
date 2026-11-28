@@ -644,7 +644,7 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
 # Sensors replaced by other entities or attributes (19 Nov 2026); their registry entries are removed at setup.
 REMOVED_SENSOR_KEYS = (
     "last_seen",  # it changed every few seconds while charging and filled the activity log; Connection has offline_since
-    "pm25",  # merged into Cabin air quality index, which now shows PM2.5 in µg/m³
+    "pm25",  # merged into Cabin PM2.5, which shows PM2.5 in µg/m³
     "target_soc",  # the Target SOC number shows it
     "precleaning_runtime_left",  # attributes of the Air Purification switch
     "precleaning_start_reason",
