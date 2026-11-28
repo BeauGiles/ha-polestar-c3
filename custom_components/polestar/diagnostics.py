@@ -31,6 +31,7 @@ TO_REDACT = {
     "latitude",
     "longitude",
     "altitude",
+    "plug_and_charge_pcid",
 }
 
 

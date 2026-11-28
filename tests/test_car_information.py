@@ -343,7 +343,8 @@ async def test_plug_and_charge_is_read_from_the_car_record(monkeypatch, charging
     await vehicle.async_load_car_information()
 
     assert vehicle.supports_plug_and_charge is expected
-    assert "DEMOPCID" not in repr(vehicle.car_capabilities)  # the contract ID never reaches attributes
+    assert "DEMOPCID" not in repr(vehicle.car_capabilities)  # only in its own attribute, not the generic dump
+    assert vehicle.plug_and_charge_pcid == ("DEMOPCID0000000000" if b"DEMOPCID" in charging else None)
 
 
 @pytest.mark.asyncio

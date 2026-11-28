@@ -117,8 +117,7 @@ class ChargingCapabilities(ProtoMessage, schema={
 
     target_charge_level_settings: TargetChargeLevelSettings | None = None
     max_number_of_locations: int = 0
-    # Plug & Charge contract certificate ID: only a car set up for Plug & Charge has one. It identifies
-    # the car's charging contract, so the library keeps only whether it is there.
+    # Plug & Charge contract certificate ID: only a car set up for Plug & Charge has one.
     plug_and_charge_pcid: str = ""
     supports_plug_and_charge: bool = False
 
