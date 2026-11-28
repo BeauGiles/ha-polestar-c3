@@ -299,6 +299,15 @@ class TestOdometerStatus:
         assert restored.odometer_meters == 54321000
         assert restored.odometer_km == 54321.0
 
+    def test_average_speeds_are_read(self):
+        # A Polestar 2 odometer reply (28 Nov 2026): fields 5 and 6 carry the average speeds.
+        from polestar_api.codec import encode
+
+        data = encode({"m": (2, "int64"), "avg": (5, "int32"), "auto": (6, "int32")}, {"m": 8518800, "avg": 51, "auto": 40})
+        odo = OdometerStatus.from_bytes(data)
+        assert odo.average_speed_km_per_hour == 51
+        assert odo.average_speed_km_per_hour_automatic == 40
+
 
 # -- WakeUp --
 

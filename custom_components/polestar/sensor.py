@@ -189,6 +189,14 @@ def _dashboard_value(data: PolestarVehicleData, field: str) -> float | None:
     return value or None
 
 
+def _avg_speed(data: PolestarVehicleData, dashboard_field: str, odometer_field: str) -> float | None:
+    """Average speed from the dashboard record, else the odometer record (Polestar removed the dashboard)."""
+    value = _dashboard_value(data, dashboard_field)
+    if value is None and data.odometer is not None:
+        value = getattr(data.odometer, odometer_field, 0) or None
+    return value
+
+
 SENSORS: tuple[PolestarSensorDescription, ...] = (
     PolestarSensorDescription(
         key="battery_level",
@@ -336,23 +344,23 @@ SENSORS: tuple[PolestarSensorDescription, ...] = (
     PolestarSensorDescription(
         key="avg_speed",
         translation_key="avg_speed",
-        # Hidden when the car's dashboard record carries no average speed (the Polestar 2 may not send one).
-        required_data=lambda d: _dashboard_value(d, "avg_speed_manual") is not None,
+        # Hidden when neither the dashboard nor the odometer record carries an average speed.
+        required_data=lambda d: _avg_speed(d, "avg_speed_manual", "average_speed_km_per_hour") is not None,
         device_class=SensorDeviceClass.SPEED,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
         suggested_display_precision=0,
-        value_fn=lambda d: _dashboard_value(d, "avg_speed_manual"),
+        value_fn=lambda d: _avg_speed(d, "avg_speed_manual", "average_speed_km_per_hour"),
     ),
     PolestarSensorDescription(
         key="avg_speed_auto",
         translation_key="avg_speed_auto",
-        required_data=lambda d: _dashboard_value(d, "avg_speed_auto") is not None,
+        required_data=lambda d: _avg_speed(d, "avg_speed_auto", "average_speed_km_per_hour_automatic") is not None,
         device_class=SensorDeviceClass.SPEED,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
         suggested_display_precision=0,
-        value_fn=lambda d: _dashboard_value(d, "avg_speed_auto"),
+        value_fn=lambda d: _avg_speed(d, "avg_speed_auto", "average_speed_km_per_hour_automatic"),
     ),
     PolestarSensorDescription(
         key="odometer",

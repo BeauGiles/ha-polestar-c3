@@ -90,3 +90,50 @@ class TestSetPrivacySettingStateRequest:
         )
         restored = SetPrivacySettingStateRequest.from_bytes(req.to_bytes())
         assert restored == req
+
+
+# -- Reading the data-sharing toggle (a server stream in the app) --
+
+
+async def test_data_sharing_is_read_from_the_first_stream_message(monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from polestar_api.backend import C3
+    from polestar_api.services.consent import ConsentServiceClient
+
+    calls = []
+
+    async def stream(channel, method, request, *, metadata=None, retries=2):
+        calls.append(method)
+        yield RemoteFunctionDataSharing(enabled=True, car_in_sync=True, read_only=True).to_bytes()
+        raise AssertionError("only the first message should be read")
+
+    async def unary(*args, **kwargs):
+        raise AssertionError("GetRemoteFunctionDataSharing is a stream, not a unary call")
+
+    monkeypatch.setattr("polestar_api.services.consent.grpc_call.unary_stream", stream)
+    monkeypatch.setattr("polestar_api.services.consent.grpc_call.unary_unary", unary)
+    connection = SimpleNamespace(backend=C3, channel=object(), get_metadata=AsyncMock(return_value={}))
+
+    result = await ConsentServiceClient(connection, "TESTVIN").get_remote_function_data_sharing()
+
+    assert result == RemoteFunctionDataSharing(enabled=True, car_in_sync=True, read_only=True)
+    assert calls == [f"{C3.privacy_settings_svc}/GetRemoteFunctionDataSharing"]
+
+
+async def test_data_sharing_is_none_when_the_stream_sends_nothing(monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from polestar_api.backend import C3
+    from polestar_api.services.consent import ConsentServiceClient
+
+    async def stream(*args, **kwargs):
+        return
+        yield
+
+    monkeypatch.setattr("polestar_api.services.consent.grpc_call.unary_stream", stream)
+    connection = SimpleNamespace(backend=C3, channel=object(), get_metadata=AsyncMock(return_value={}))
+
+    assert await ConsentServiceClient(connection, "TESTVIN").get_remote_function_data_sharing() is None
