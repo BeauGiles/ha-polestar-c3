@@ -259,6 +259,38 @@ def air_purification_attributes(precleaning: Any) -> dict[str, Any]:
     return attrs
 
 
+def updated_at_attributes(millis: Any, source: Any = "") -> dict[str, Any]:
+    """{"updated_at": ISO time, "changed_by": "mapp"} for a chronos setting, leaving out what isn't sent.
+
+    ``changed_by`` is the backend's source of the last change: ``mapp`` (the app) or ``car``.
+    """
+    attrs: dict[str, Any] = {}
+    if isinstance(millis, int) and millis > 0:
+        attrs["updated_at"] = datetime.fromtimestamp(millis / 1000, tz=dt_util.UTC).isoformat()
+    if isinstance(source, str) and source:
+        attrs["changed_by"] = source
+    return attrs
+
+
+def sync_attributes(metadata: Any) -> dict[str, Any]:
+    """Whether a schedule change has reached the car, from chronos metadata.
+
+    ``sync_status`` is ``synced`` once the car has the change; ``syncing``, ``retrying`` or ``retrying_car_offline``
+    while it's still on its way, and ``error`` if the car refused it. A pending change otherwise looks applied.
+    """
+    if metadata is None:
+        return {}
+    attrs = updated_at_attributes(getattr(metadata, "updated_at", 0), getattr(metadata, "source", ""))
+    sync = getattr(metadata, "sync_status", None)
+    status = getattr(sync, "status", None)
+    if status is not None and int(status):
+        attrs["sync_status"] = status.name.lower()
+    message = getattr(sync, "message", "") if sync is not None else ""
+    if message:
+        attrs["sync_message"] = message
+    return attrs
+
+
 def weather_attributes(weather: Any) -> dict[str, Any]:
     """When the weather service says the outside temperature was taken (it is a lookup at the car's location)."""
     millis = getattr(weather, "timestamp_epoch_millis", 0) if weather else 0

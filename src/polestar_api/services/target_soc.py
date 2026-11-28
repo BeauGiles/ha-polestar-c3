@@ -52,6 +52,8 @@ class TargetSocServiceClient:
             return TargetSocResponse(
                 target_level=int(inner.get(1, 0) or 0),
                 setting_type=setting_type,
+                updated_at=int(inner.get(3, 0) or 0),
+                source=inner[4].decode("utf-8", "replace") if isinstance(inner.get(4), bytes) else "",
             )
         return TargetSocResponse()
 

@@ -37,6 +37,8 @@ class TargetSocResponse(ProtoMessage, schema={
     target_level: int = 0
     # The car's active mode, populated from GetTargetSoc (not on the wire here).
     setting_type: ChargeTargetLevelSettingType = ChargeTargetLevelSettingType.UNSPECIFIED
+    updated_at: int = 0  # epoch ms the backend last changed it, from GetTargetSoc (not on the wire here)
+    source: str = ""  # who made that change: "mapp" (the app) or "car", from GetTargetSoc
 
 
 # -- Amp Limit --
@@ -54,6 +56,8 @@ class AmpLimitResponse(ProtoMessage, schema={
 }):
     response_status: ResponseStatus | None = None
     amperage_limit: int = 0
+    updated_at: int = 0  # epoch ms the backend last changed it, from GetAmpLimit (not on the wire here)
+    source: str = ""  # who made that change, from GetAmpLimit
 
 
 # -- Charge Timer --
@@ -73,17 +77,43 @@ class DailyTime(ProtoMessage, schema={1: "hour", 2: "minute", 3: "time_zone"}):
     time_zone: TimeZoneOffset | None = None
 
 
+class SyncState(IntEnum):
+    """chronos common.v1 Status: whether a schedule change has reached the car."""
+    UNKNOWN = 0
+    SYNCING = 1
+    SYNCED = 2
+    RETRYING = 3
+    RETRYING_CAR_OFFLINE = 4
+    ERROR = 5
+
+
+@dataclass(frozen=True)
+class SyncStatus(ProtoMessage, schema={1: "status", 2: "message"}):
+    status: SyncState = SyncState.UNKNOWN
+    message: str = ""
+
+
+@dataclass(frozen=True)
+class ChronosMetadata(ProtoMessage, schema={2: "updated_at", 3: "source", 4: "sync_status"}):
+    """chronos common.v1 Metadata, set by the backend (never sent by us)."""
+    updated_at: int = 0  # epoch milliseconds
+    source: str = ""  # who made the last change: "mapp" (the app) or "car"
+    sync_status: SyncStatus | None = None
+
+
 @dataclass(frozen=True)
 class BatteryChargeTimer(ProtoMessage, schema={
     1: "start",
     2: "stop",
     3: "activated",
+    4: "metadata",
 }):
-    # v2 globalchargetimer.GlobalChargeTimer: start/stop are DailyTime messages
-    # (field 4 is server-side metadata, not sent here).
+    # v2 globalchargetimer.GlobalChargeTimer: start/stop are DailyTime messages.
     start: DailyTime | None = None
     stop: DailyTime | None = None
     activated: bool = False
+    # Backend metadata in replies (sync status). The setter builds a new timer without it.
+    metadata: ChronosMetadata | None = None
 
 
 @dataclass(frozen=True)
