@@ -90,7 +90,7 @@ Reports of what works and what doesn't on your model are welcome. Please [open a
 
 | Feature | Polestar C3 | Volvo C3 |
 | --- | :---: | :---: |
-| Clear error when a command is refused (offline, privacy mode, in use, busy, timeout) | ✅ | 🧪 |
+| Clear error when a command is refused (offline, privacy mode, in use, busy, timeout) | ✅ | ✅ |
 | Live updates streamed from the car's cloud | ✅ | 🧪 |
 | Adaptive polling (faster while charging, driving or running climate) | ✅ | ✅ |
 | Entities hidden for features the car doesn't have | ✅ | ✅ |
